@@ -16,8 +16,8 @@ private cloud. The wrapped BAPIs are not released for ABAP Cloud.
 
 ```
 src/                ZABAPUTIL_BUS        root package
-├─ 00/              ZABAPUTIL_BUS_00     renamed copies of abap-util (see below) - not edited here
-├─ core/            ZABAPUTIL_BUS_CORE   zabaputil_cl_bus: messages, commit, buffers
+├─ 00/              ZABAPUTIL_BUS_00     zabaputil_cl_bus: messages, commit, buffers - and the
+│                                        renamed copies of abap-util (zabaputil_c?_bus_util_*, see below)
 ├─ sd/              ZABAPUTIL_BUS_SD     sales order, delivery, shipment, HU, serial numbers
 ├─ mm/              ZABAPUTIL_BUS_MM     material, goods movement, inventory, PO, requisition
 ├─ wm/              ZABAPUTIL_BUS_WM     LE-WM: transfer order, transfer requirement, storage unit
@@ -33,7 +33,7 @@ the object names are short (`sd_hu`, `mm_goodsmvt`, `wm_to`).
 
 ## Vendored from abap-util — copy, don't depend
 
-`src/00` carries renamed copies of [abap-util](https://github.com/abap-util/abap-util)
+Next to `zabaputil_cl_bus`, `src/00` carries renamed copies of [abap-util](https://github.com/abap-util/abap-util)
 classes, the way every abap-util consumer does: no dependency to install, no
 name clash with an installed abap-util.
 

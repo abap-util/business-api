@@ -59,7 +59,7 @@
     // the vendored copies of abap-util (src/00) are checked by abap-util's own CI, and
     // its RTTI helpers deliberately leave REFERENCE_IS_INITIAL to the caller
     "unhandled_classic_exception": {
-      "exclude": ["src/00/"]
+      "exclude": ["src/00/zabaputil_c._bus_util_"]
     },
     "forbidden_statement": {
       "statements": ["Perform", "Form", "Write", "Refresh", "Ranges", "Describe", "Collect"]
