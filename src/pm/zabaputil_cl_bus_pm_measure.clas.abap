@@ -71,17 +71,17 @@ CLASS zabaputil_cl_bus_pm_measure IMPLEMENTATION.
             error_message        = 98
             OTHERS               = 99.
         IF sy-subrc <> 0.
-          zabaputil_cl_bus=>msg_add_sy( EXPORTING iv_context = 'MEASUREM_DOCUM_RFC_SINGLE_001'
-                                        CHANGING  ct_bapiret = et_bapiret ).
+          zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'MEASUREM_DOCUM_RFC_SINGLE_001'
+                                                          CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -97,12 +97,12 @@ CLASS zabaputil_cl_bus_pm_measure IMPLEMENTATION.
     CLEAR: es_imrg, ev_is_error, et_bapiret.
     READ TABLE lt_imrg INTO es_imrg INDEX 1.
     IF sy-subrc <> 0.
-      zabaputil_cl_bus=>msg_add_text( EXPORTING iv_text    = |No measurement document for measuring point { iv_point ALPHA = OUT }|
-                                      CHANGING  ct_bapiret = et_bapiret ).
+      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |No measurement document for measuring point { iv_point ALPHA = OUT }|
+                                                        CHANGING  ct_bapiret = et_bapiret ).
     ENDIF.
 
-    zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                       cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                         cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 

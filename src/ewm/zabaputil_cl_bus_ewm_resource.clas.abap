@@ -44,17 +44,17 @@ CLASS zabaputil_cl_bus_ewm_resource IMPLEMENTATION.
         SELECT SINGLE * FROM (lv_table) INTO @<resource> WHERE lgnum = @lv_lgnum AND rsrc = @lv_rsrc.
         IF sy-subrc <> 0.
           CLEAR er_resource.
-          zabaputil_cl_bus=>msg_add_text( EXPORTING iv_text    = |Resource { iv_rsrc } not found in warehouse { iv_lgnum }|
-                                          CHANGING  ct_bapiret = et_bapiret ).
+          zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Resource { iv_rsrc } not found in warehouse { iv_lgnum }|
+                                                            CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
       CATCH cx_root INTO DATA(lx_error).
         CLEAR er_resource.
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                       cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                         cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 

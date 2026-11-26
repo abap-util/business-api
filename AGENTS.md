@@ -16,8 +16,8 @@ private cloud. The wrapped BAPIs are not released for ABAP Cloud.
 
 ```
 src/                ZABAPUTIL_BUS        root package
-├─ 00/              ZABAPUTIL_BUS_00     zabaputil_cl_bus: messages, commit, buffers - and the
-│                                        renamed copies of abap-util (zabaputil_c?_bus_util_*, see below)
+├─ 00/              ZABAPUTIL_BUS_00     the renamed copies of abap-util (zabaputil_c?_bus_util_*, see below):
+│                                        messages, commit, buffers - the bapi_* methods of the context class
 ├─ sd/              ZABAPUTIL_BUS_SD     sales order, delivery, shipment, HU, serial numbers
 ├─ mm/              ZABAPUTIL_BUS_MM     material, goods movement, inventory, PO, requisition
 ├─ wm/              ZABAPUTIL_BUS_WM     LE-WM: transfer order, transfer requirement, storage unit
@@ -33,7 +33,7 @@ the object names are short (`sd_hu`, `mm_goodsmvt`, `wm_to`).
 
 ## Vendored from abap-util — copy, don't depend
 
-Next to `zabaputil_cl_bus`, `src/00` carries renamed copies of [abap-util](https://github.com/abap-util/abap-util)
+`src/00` carries nothing but renamed copies of [abap-util](https://github.com/abap-util/abap-util)
 classes, the way every abap-util consumer does: no dependency to install, no
 name clash with an installed abap-util.
 
@@ -43,17 +43,18 @@ and `util` (no module) keeps the copies apart from the business classes.
 
 | Copy here | Master in abap-util | Scope |
 |---|---|---|
-| `zabaputil_cl_bus_util_context` | `zabaputil_cl_util_context` | trimmed to the methods the message class needs, with their helpers |
-| `zabaputil_cl_bus_util_msg` | `zabaputil_cl_util_msg` | as is - plus `ARBGB`/`TXTNR` in `msg_map( )` (MESG), to be synced back |
+| `zabaputil_cl_bus_util_context` | `zabaputil_cl_util_context` | trimmed to the `bapi_*` methods, `conv_alpha_in` and `uuid_get_c32`, with their helpers |
 | `zabaputil_cx_bus_util_error` | `zabaputil_cx_util_error` | as is |
 
-Copied at abap-util `9296364`. `zabaputil_cl_bus` turns their message model
-(`ty_t_msg`) into `BAPIRET2`. Do not edit the copies for style: a fix goes
+Copied at abap-util `64cbbb4`. The `bapi_*` methods turn abap-util's message
+model (`ty_t_msg`) into rows of `BAPIRET2` - of any table with its
+components, filled by name. Do not edit the copies for style: a fix goes
 into abap-util and is copied back, or is made here and synced back. To
 refresh a copy, take the master, apply the rename (back: `bus_util_` →
-`util_`), and trim the context class to the closure of the methods the
-message class and the exception call. A new copy must stay within 30
-characters after the rename.
+`util_`), and trim the context class to the closure of the methods this
+repository calls (`bapi_*`, `conv_alpha_in`) and the exception calls
+(`uuid_get_c32`): every method, type and constant they reach, transitively.
+A new copy must stay within 30 characters after the rename.
 
 ## The method contract — every method keeps it
 
@@ -72,18 +73,18 @@ CLASS-METHODS <action>
 2. **`et_bapiret` holds every message** — of the BAPI, of a classic exception
    (from `sy-msg`), of a runtime error (`cx_root`), and own checks. It is
    cleared at the start of the method.
-3. **`ev_is_error` is set by `zabaputil_cl_bus=>finish( )` only** — abap_true
+3. **`ev_is_error` is set by `zabaputil_cl_bus_util_context=>bapi_finish( )` only** — abap_true
    when `et_bapiret` holds a message of type E, A or X.
 4. **No exception leaves a method.** Every call sits in `TRY … CATCH cx_root`;
    a classic `CALL FUNCTION` has `EXCEPTIONS error_message = … OTHERS = …`.
 5. **`iv_commit`:** abap_true commits (`BAPI_TRANSACTION_COMMIT`, wait) on
-   success and rolls back on error, via `finish( )`. abap_false (default): the
+   success and rolls back on error, via `bapi_finish( )`. abap_false (default): the
    caller owns the LUW, the method neither commits nor rolls back. Function
    modules with an own commit flag (`i_commit_work`, `iv_commit_work`) are
    always called without it. A module that commits by itself is named in the
    method's ABAP Doc.
-6. **Read methods** have no `iv_commit` and end with `finish( )` without it.
-7. **Every method ends with `zabaputil_cl_bus=>finish( )`.**
+6. **Read methods** have no `iv_commit` and end with `bapi_finish( )` without it.
+7. **Every method ends with `zabaputil_cl_bus_util_context=>bapi_finish( )`.**
 
 ## Rules
 
@@ -92,13 +93,13 @@ CLASS-METHODS <action>
   SAP standard interfaces and their documentation only.
 - **Complex BAPI input stays a BAPI structure** (`is_header TYPE bapisdhd1`);
   convenience methods with simple parameters are added for the common cases.
-- **Material numbers go through `zabaputil_cl_bus=>set_material( )`**, which
+- **Material numbers go through `zabaputil_cl_bus_util_context=>bapi_set_material( )`**, which
   fills `MATERIAL_LONG` on S/4HANA and `MATERIAL` elsewhere.
-- **Reset the buffers** (`zabaputil_cl_bus=>refresh_buffers( )`) before a
+- **Reset the buffers** (`zabaputil_cl_bus_util_context=>bapi_refresh_buffers( )`) before a
   write that reads delivery, HU or serial number data.
 - **EWM:** no static reference to a `/SCWM/` object (types, tables, function
   modules). Create the data dynamically and call through
-  `zabaputil_cl_bus=>call_function( )`, so the classes activate in systems
+  `zabaputil_cl_bus_util_context=>bapi_call_function( )`, so the classes activate in systems
   without EWM.
 - **Only DDIC types that exist in every ERP system** in signatures (SD, MM,
   LE-WM, PP, PM, QM, CA are there in ECC and S/4HANA).
@@ -116,8 +117,8 @@ npm run rename     # every class renamed to the 11-character placeholder prefix
 
 SAP standard types are void for abaplint (no dependency has them), so it checks
 the syntax of the own code, not the BAPI field names. **Activation and the BAPI
-calls are only verified on a system** — `zabaputil_cl_bus` has unit tests, the
-module classes have none yet.
+calls are only verified on a system** — the `bapi_*` methods are unit-tested
+in abap-util (`ltcl_bapi_ops`), the module classes have no tests yet.
 
 ## Downport and renaming
 

@@ -123,13 +123,13 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
     CLEAR: ev_exidv, ev_is_error, et_bapiret.
 
     TRY.
-        zabaputil_cl_bus=>refresh_buffers( 'HU' ).
+        zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'HU' ).
         ls_proposal-hu_exid  = iv_exidv.
         ls_proposal-plant    = iv_werks.
         ls_proposal-stge_loc = iv_lgort.
-        zabaputil_cl_bus=>set_material( EXPORTING iv_matnr = iv_vhilm
-                                                  iv_field = 'PACK_MAT'
-                                        CHANGING  cs_data  = ls_proposal ).
+        zabaputil_cl_bus_util_context=>bapi_set_material( EXPORTING iv_matnr = iv_vhilm
+                                                                    iv_field = 'PACK_MAT'
+                                                          CHANGING  cs_data  = ls_proposal ).
         CALL FUNCTION 'BAPI_HU_CREATE'
           EXPORTING
             headerproposal = ls_proposal
@@ -139,13 +139,13 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
           TABLES
             return         = et_bapiret.
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -168,17 +168,17 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
             huitem    = et_item
             return    = et_bapiret.
         READ TABLE lt_header INTO es_header INDEX 1.
-        IF sy-subrc <> 0 AND zabaputil_cl_bus=>check_is_error( et_bapiret ) = abap_false.
-          zabaputil_cl_bus=>msg_add_text( EXPORTING iv_text    = |Handling unit { iv_exidv ALPHA = OUT } not found|
-                                          CHANGING  ct_bapiret = et_bapiret ).
+        IF sy-subrc <> 0 AND zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_false.
+          zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Handling unit { iv_exidv ALPHA = OUT } not found|
+                                                            CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                       cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                         cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -195,19 +195,19 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
         ls_item-plant        = iv_werks.
         ls_item-stge_loc     = iv_lgort.
         ls_item-batch        = iv_charg.
-        zabaputil_cl_bus=>set_material( EXPORTING iv_matnr = iv_matnr
-                                        CHANGING  cs_data  = ls_item ).
+        zabaputil_cl_bus_util_context=>bapi_set_material( EXPORTING iv_matnr = iv_matnr
+                                                          CHANGING  cs_data  = ls_item ).
         call_pack( EXPORTING iv_exidv   = iv_exidv
                              is_item    = ls_item
                    CHANGING  ct_bapiret = et_bapiret ).
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -224,13 +224,13 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
                              is_item    = ls_item
                    CHANGING  ct_bapiret = et_bapiret ).
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -247,19 +247,19 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
         ls_item-plant         = iv_werks.
         ls_item-stge_loc      = iv_lgort.
         ls_item-batch         = iv_charg.
-        zabaputil_cl_bus=>set_material( EXPORTING iv_matnr = iv_matnr
-                                        CHANGING  cs_data  = ls_item ).
+        zabaputil_cl_bus_util_context=>bapi_set_material( EXPORTING iv_matnr = iv_matnr
+                                                          CHANGING  cs_data  = ls_item ).
         call_unpack( EXPORTING iv_exidv   = iv_exidv
                                is_item    = ls_item
                      CHANGING  ct_bapiret = et_bapiret ).
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -276,13 +276,13 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
                                is_item    = ls_item
                      CHANGING  ct_bapiret = et_bapiret ).
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -291,20 +291,20 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
     CLEAR: ev_is_error, et_bapiret.
 
     TRY.
-        zabaputil_cl_bus=>refresh_buffers( 'HU' ).
+        zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'HU' ).
         CALL FUNCTION 'BAPI_HU_DELETE'
           EXPORTING
             hukey  = iv_exidv
           TABLES
             return = et_bapiret.
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -312,7 +312,7 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
 
     DATA lt_return TYPE bapirettab.
 
-    zabaputil_cl_bus=>refresh_buffers( 'HU' ).
+    zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'HU' ).
     CALL FUNCTION 'BAPI_HU_PACK'
       EXPORTING
         hukey        = iv_exidv
@@ -327,7 +327,7 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
 
     DATA lt_return TYPE bapirettab.
 
-    zabaputil_cl_bus=>refresh_buffers( 'HU' ).
+    zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'HU' ).
     CALL FUNCTION 'BAPI_HU_UNPACK'
       EXPORTING
         hukey      = iv_exidv

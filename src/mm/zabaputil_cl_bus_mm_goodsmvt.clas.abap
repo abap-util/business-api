@@ -198,13 +198,13 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
             goodsmvt_item    = lt_item
             return           = et_bapiret.
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -325,10 +325,10 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
 
     SELECT SINGLE * FROM resb INTO @ls_resb WHERE rsnum = @iv_rsnum AND rspos = @iv_rspos ##WARN_OK.
     IF sy-subrc <> 0.
-      zabaputil_cl_bus=>msg_add_text( EXPORTING iv_text    = |Reservation item { iv_rsnum ALPHA = OUT }/{ iv_rspos ALPHA = OUT } not found|
-                                      CHANGING  ct_bapiret = et_bapiret ).
-      zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                         cv_is_error = ev_is_error ).
+      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Reservation item { iv_rsnum ALPHA = OUT }/{ iv_rspos ALPHA = OUT } not found|
+                                                        CHANGING  ct_bapiret = et_bapiret ).
+      zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                           cv_is_error = ev_is_error ).
       RETURN.
     ENDIF.
 
@@ -406,13 +406,13 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
         ev_mblnr_cancel = ls_headret-mat_doc.
         ev_mjahr_cancel = ls_headret-doc_year.
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -424,8 +424,8 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
     rs_result-batch     = iv_charg.
     rs_result-entry_qnt = iv_menge.
     rs_result-entry_uom = iv_meins.
-    zabaputil_cl_bus=>set_material( EXPORTING iv_matnr = iv_matnr
-                                    CHANGING  cs_data  = rs_result ).
+    zabaputil_cl_bus_util_context=>bapi_set_material( EXPORTING iv_matnr = iv_matnr
+                                                      CHANGING  cs_data  = rs_result ).
 
   ENDMETHOD.
 

@@ -116,17 +116,17 @@ CLASS zabaputil_cl_bus_sd_order IMPLEMENTATION.
             order_partners     = lt_partner
             order_schedules_in = lt_schedule.
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    IF ev_vbeln IS INITIAL AND zabaputil_cl_bus=>check_is_error( et_bapiret ) = abap_false.
-      zabaputil_cl_bus=>msg_add_text( EXPORTING iv_text    = 'No sales order created'
-                                      CHANGING  ct_bapiret = et_bapiret ).
+    IF ev_vbeln IS INITIAL AND zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_false.
+      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = 'No sales order created'
+                                                        CHANGING  ct_bapiret = et_bapiret ).
     ENDIF.
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -136,14 +136,14 @@ CLASS zabaputil_cl_bus_sd_order IMPLEMENTATION.
 
     SELECT SINGLE * FROM vbak INTO @es_vbak WHERE vbeln = @iv_vbeln.
     IF sy-subrc <> 0.
-      zabaputil_cl_bus=>msg_add_text( EXPORTING iv_text    = |Sales order { iv_vbeln ALPHA = OUT } not found|
-                                      CHANGING  ct_bapiret = et_bapiret ).
+      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Sales order { iv_vbeln ALPHA = OUT } not found|
+                                                        CHANGING  ct_bapiret = et_bapiret ).
     ELSE.
       SELECT * FROM vbap INTO TABLE @et_vbap WHERE vbeln = @iv_vbeln ORDER BY posnr.
     ENDIF.
 
-    zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                       cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                         cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -178,13 +178,13 @@ CLASS zabaputil_cl_bus_sd_order IMPLEMENTATION.
             schedule_lines   = lt_schedule
             schedule_linesx  = lt_schedulex.
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 

@@ -65,8 +65,8 @@ CLASS zabaputil_cl_bus_ca_status IMPLEMENTATION.
             error_message    = 98
             OTHERS           = 99.
         IF sy-subrc <> 0.
-          zabaputil_cl_bus=>msg_add_sy( EXPORTING iv_context = 'STATUS_READ'
-                                        CHANGING  ct_bapiret = et_bapiret ).
+          zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'STATUS_READ'
+                                                          CHANGING  ct_bapiret = et_bapiret ).
         ELSE.
           CALL FUNCTION 'STATUS_TEXT_EDIT'
             EXPORTING
@@ -85,12 +85,12 @@ CLASS zabaputil_cl_bus_ca_status IMPLEMENTATION.
           ENDIF.
         ENDIF.
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                       cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                         cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -118,17 +118,17 @@ CLASS zabaputil_cl_bus_ca_status IMPLEMENTATION.
             error_message = 98
             OTHERS        = 99.
         IF sy-subrc <> 0.
-          zabaputil_cl_bus=>msg_add_sy( EXPORTING iv_context = 'STATUS_CHANGE_EXTERN'
-                                        CHANGING  ct_bapiret = et_bapiret ).
+          zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'STATUS_CHANGE_EXTERN'
+                                                          CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 

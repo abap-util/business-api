@@ -78,14 +78,11 @@ The EWM classes reach every `/SCWM/` object dynamically, so the whole
 repository activates in systems without EWM.
 
 #### Package 00
-`zabaputil_cl_bus` holds what every method uses: `finish( )` (error flag, commit or rollback), message helpers for `sy-msg`, exceptions and any message table, `set_material( )` (18 or 40 characters), `refresh_buffers( )` and `call_function( )` for dynamic calls.
-
-The message handling runs on renamed copies of [abap-util](https://github.com/abap-util/abap-util) in the same package - copied, not installed, as abap-util is meant to be consumed:
+What every method uses comes from the `bapi_*` methods of [abap-util](https://github.com/abap-util/abap-util)'s context class: `bapi_finish( )` (error flag, commit or rollback), message helpers for `sy-msg`, exceptions and any message table, `bapi_set_material( )` (18 or 40 characters), `bapi_refresh_buffers( )`, `bapi_call_function( )` for dynamic calls and `conv_alpha_in( )`. They are a renamed copy in this package - copied, not installed, as abap-util is meant to be consumed:
 
 | Copy | Master in abap-util |
 |---|---|
-| `zabaputil_cl_bus_util_context` | `zabaputil_cl_util_context` (trimmed) |
-| `zabaputil_cl_bus_util_msg` | `zabaputil_cl_util_msg` |
+| `zabaputil_cl_bus_util_context` | `zabaputil_cl_util_context` (trimmed to the `bapi_*` methods and their helpers) |
 | `zabaputil_cx_bus_util_error` | `zabaputil_cx_util_error` |
 
 #### Renaming
