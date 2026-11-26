@@ -64,12 +64,12 @@ CLASS zabaputil_cl_bus_mm_po IMPLEMENTATION.
             return        = et_bapiret
             poitem        = et_item.
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                       cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                         cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -93,13 +93,13 @@ CLASS zabaputil_cl_bus_mm_po IMPLEMENTATION.
             poitem        = lt_item
             poitemx       = lt_itemx.
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 

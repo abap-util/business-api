@@ -90,16 +90,16 @@ CLASS zabaputil_cl_bus_pp_order IMPLEMENTATION.
             position      = et_position
             component     = et_component
             operation     = et_operation.
-        zabaputil_cl_bus=>msg_add_bapiret2( EXPORTING is_return  = ls_return
-                                            CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = ls_return
+                                                              CHANGING  ct_bapiret = et_bapiret ).
         READ TABLE lt_header INTO es_header INDEX 1.
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                       cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                         cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -111,9 +111,9 @@ CLASS zabaputil_cl_bus_pp_order IMPLEMENTATION.
                                iv_aufnr    = iv_aufnr
                      CHANGING  ct_bapiret  = et_bapiret ).
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -129,16 +129,16 @@ CLASS zabaputil_cl_bus_pp_order IMPLEMENTATION.
             number = iv_aufnr
           IMPORTING
             return = ls_return.
-        zabaputil_cl_bus=>msg_add_bapiret2( EXPORTING is_return  = ls_return
-                                            CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = ls_return
+                                                              CHANGING  ct_bapiret = et_bapiret ).
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -150,9 +150,9 @@ CLASS zabaputil_cl_bus_pp_order IMPLEMENTATION.
                                iv_aufnr    = iv_aufnr
                      CHANGING  ct_bapiret  = et_bapiret ).
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -163,16 +163,16 @@ CLASS zabaputil_cl_bus_pp_order IMPLEMENTATION.
     DATA ls_return TYPE bapiret2.
 
     lt_orders = VALUE #( ( order_number = iv_aufnr ) ).
-    zabaputil_cl_bus=>call_function(
-      EXPORTING iv_name    = iv_function
-                it_param   = VALUE #( ( name = 'RETURN'        kind = abap_func_importing value = REF #( ls_return ) )
-                                      ( name = 'ORDERS'        kind = abap_func_tables    value = REF #( lt_orders ) )
-                                      ( name = 'DETAIL_RETURN' kind = abap_func_tables    value = REF #( lt_detail ) ) )
-      CHANGING  ct_bapiret = ct_bapiret ).
-    zabaputil_cl_bus=>msg_add_bapiret2( EXPORTING is_return  = ls_return
-                                        CHANGING  ct_bapiret = ct_bapiret ).
-    zabaputil_cl_bus=>msg_add_table( EXPORTING it_table   = lt_detail
-                                     CHANGING  ct_bapiret = ct_bapiret ).
+    zabaputil_cl_bus_util_context=>bapi_call_function(
+                        EXPORTING iv_name    = iv_function
+                                  it_param   = VALUE #( ( name = 'RETURN'        kind = abap_func_importing value = REF #( ls_return ) )
+                                                        ( name = 'ORDERS'        kind = abap_func_tables    value = REF #( lt_orders ) )
+                                                        ( name = 'DETAIL_RETURN' kind = abap_func_tables    value = REF #( lt_detail ) ) )
+                        CHANGING  ct_bapiret = ct_bapiret ).
+    zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = ls_return
+                                                          CHANGING  ct_bapiret = ct_bapiret ).
+    zabaputil_cl_bus_util_context=>bapi_msg_add_table( EXPORTING it_table   = lt_detail
+                                                       CHANGING  ct_bapiret = ct_bapiret ).
 
   ENDMETHOD.
 

@@ -136,17 +136,17 @@ CLASS zabaputil_cl_bus_sd_shipment IMPLEMENTATION.
             itemdata   = lt_item
             return     = et_bapiret.
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    IF ev_tknum IS INITIAL AND zabaputil_cl_bus=>check_is_error( et_bapiret ) = abap_false.
-      zabaputil_cl_bus=>msg_add_text( EXPORTING iv_text    = 'No shipment created'
-                                      CHANGING  ct_bapiret = et_bapiret ).
+    IF ev_tknum IS INITIAL AND zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_false.
+      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = 'No shipment created'
+                                                        CHANGING  ct_bapiret = et_bapiret ).
     ENDIF.
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -156,14 +156,14 @@ CLASS zabaputil_cl_bus_sd_shipment IMPLEMENTATION.
 
     SELECT SINGLE * FROM vttk INTO @es_vttk WHERE tknum = @iv_tknum.
     IF sy-subrc <> 0.
-      zabaputil_cl_bus=>msg_add_text( EXPORTING iv_text    = |Shipment { iv_tknum ALPHA = OUT } not found|
-                                      CHANGING  ct_bapiret = et_bapiret ).
+      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Shipment { iv_tknum ALPHA = OUT } not found|
+                                                        CHANGING  ct_bapiret = et_bapiret ).
     ELSE.
       SELECT * FROM vttp INTO TABLE @et_vttp WHERE tknum = @iv_tknum ORDER BY tpnum.
     ENDIF.
 
-    zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                       cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                         cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -183,8 +183,8 @@ CLASS zabaputil_cl_bus_sd_shipment IMPLEMENTATION.
         ASSIGN COMPONENT lv_field OF STRUCTURE ls_header TO <value>.
         ASSIGN COMPONENT lv_field OF STRUCTURE ls_action TO <action>.
         IF <value> IS NOT ASSIGNED OR <action> IS NOT ASSIGNED.
-          zabaputil_cl_bus=>msg_add_text( EXPORTING iv_text    = |Unknown shipment status { lv_field }|
-                                          CHANGING  ct_bapiret = et_bapiret ).
+          zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Unknown shipment status { lv_field }|
+                                                            CHANGING  ct_bapiret = et_bapiret ).
         ELSE.
           <value>  = abap_true.
           <action> = 'C'.
@@ -193,13 +193,13 @@ CLASS zabaputil_cl_bus_sd_shipment IMPLEMENTATION.
                        CHANGING  ct_bapiret       = et_bapiret ).
         ENDIF.
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -240,13 +240,13 @@ CLASS zabaputil_cl_bus_sd_shipment IMPLEMENTATION.
                                is_header_action = ls_action
                      CHANGING  ct_bapiret       = et_bapiret ).
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -272,13 +272,13 @@ CLASS zabaputil_cl_bus_sd_shipment IMPLEMENTATION.
                                it_item_action   = lt_item_action
                      CHANGING  ct_bapiret       = et_bapiret ).
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 

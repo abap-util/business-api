@@ -39,12 +39,12 @@ CLASS zabaputil_cl_bus_qm_insp_lot IMPLEMENTATION.
 
     SELECT SINGLE * FROM qals INTO @es_qals WHERE prueflos = @iv_prueflos.
     IF sy-subrc <> 0.
-      zabaputil_cl_bus=>msg_add_text( EXPORTING iv_text    = |Inspection lot { iv_prueflos ALPHA = OUT } not found|
-                                      CHANGING  ct_bapiret = et_bapiret ).
+      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Inspection lot { iv_prueflos ALPHA = OUT } not found|
+                                                        CHANGING  ct_bapiret = et_bapiret ).
     ENDIF.
 
-    zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                       cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                         cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -62,16 +62,16 @@ CLASS zabaputil_cl_bus_qm_insp_lot IMPLEMENTATION.
             language = sy-langu
           IMPORTING
             return   = ls_return.
-        zabaputil_cl_bus=>msg_add_bapiret2( EXPORTING is_return  = ls_return
-                                            CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = ls_return
+                                                              CHANGING  ct_bapiret = et_bapiret ).
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 

@@ -47,12 +47,12 @@ CLASS zabaputil_cl_bus_sd_serial IMPLEMENTATION.
 
     SELECT SINGLE * FROM equi INTO @es_equi WHERE matnr = @iv_matnr AND sernr = @iv_sernr ##WARN_OK.
     IF sy-subrc <> 0.
-      zabaputil_cl_bus=>msg_add_text( EXPORTING iv_text    = |Serial number { iv_sernr } of material { iv_matnr } not found|
-                                      CHANGING  ct_bapiret = et_bapiret ).
+      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Serial number { iv_sernr } of material { iv_matnr } not found|
+                                                        CHANGING  ct_bapiret = et_bapiret ).
     ENDIF.
 
-    zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                       cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                         cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -74,8 +74,8 @@ CLASS zabaputil_cl_bus_sd_serial IMPLEMENTATION.
         INTO TABLE @et_serial.
     ENDIF.
 
-    zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                       cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                         cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 

@@ -69,16 +69,16 @@ CLASS zabaputil_cl_bus_pm_equipment IMPLEMENTATION.
           IMPORTING
             equipment       = ev_equnr
             return          = ls_return.
-        zabaputil_cl_bus=>msg_add_bapiret2( EXPORTING is_return  = ls_return
-                                            CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = ls_return
+                                                              CHANGING  ct_bapiret = et_bapiret ).
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -96,15 +96,15 @@ CLASS zabaputil_cl_bus_pm_equipment IMPLEMENTATION.
             data_general_exp  = es_general
             data_specific_exp = es_specific
             return            = ls_return.
-        zabaputil_cl_bus=>msg_add_bapiret2( EXPORTING is_return  = ls_return
-                                            CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = ls_return
+                                                              CHANGING  ct_bapiret = et_bapiret ).
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                       cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                         cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -125,16 +125,16 @@ CLASS zabaputil_cl_bus_pm_equipment IMPLEMENTATION.
             valid_date     = iv_date
           IMPORTING
             return         = ls_return.
-        zabaputil_cl_bus=>msg_add_bapiret2( EXPORTING is_return  = ls_return
-                                            CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = ls_return
+                                                              CHANGING  ct_bapiret = et_bapiret ).
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 

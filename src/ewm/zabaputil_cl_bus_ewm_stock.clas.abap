@@ -55,17 +55,17 @@ CLASS zabaputil_cl_bus_ewm_stock IMPLEMENTATION.
         SELECT SINGLE * FROM (lv_table) INTO @<bin> WHERE lgnum = @lv_lgnum AND lgpla = @lv_lgpla.
         IF sy-subrc <> 0.
           CLEAR er_bin.
-          zabaputil_cl_bus=>msg_add_text( EXPORTING iv_text    = |Storage bin { iv_lgpla } not found in warehouse { iv_lgnum }|
-                                          CHANGING  ct_bapiret = et_bapiret ).
+          zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Storage bin { iv_lgpla } not found in warehouse { iv_lgnum }|
+                                                            CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
       CATCH cx_root INTO DATA(lx_error).
         CLEAR er_bin.
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                       cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                         cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -87,12 +87,12 @@ CLASS zabaputil_cl_bus_ewm_stock IMPLEMENTATION.
         SELECT * FROM (lv_table) INTO TABLE @<stock> WHERE lgnum = @lv_lgnum AND lgpla = @lv_lgpla.
       CATCH cx_root INTO DATA(lx_error).
         CLEAR er_stock.
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                       cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                         cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 

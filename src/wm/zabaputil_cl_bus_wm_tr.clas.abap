@@ -86,17 +86,17 @@ CLASS zabaputil_cl_bus_wm_tr IMPLEMENTATION.
             error_message = 98
             OTHERS        = 99.
         IF sy-subrc <> 0.
-          zabaputil_cl_bus=>msg_add_sy( EXPORTING iv_context = 'L_TR_CREATE'
-                                        CHANGING  ct_bapiret = et_bapiret ).
+          zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'L_TR_CREATE'
+                                                          CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -106,14 +106,14 @@ CLASS zabaputil_cl_bus_wm_tr IMPLEMENTATION.
 
     SELECT SINGLE * FROM ltbk INTO @es_ltbk WHERE lgnum = @iv_lgnum AND tbnum = @iv_tbnum.
     IF sy-subrc <> 0.
-      zabaputil_cl_bus=>msg_add_text( EXPORTING iv_text    = |Transfer requirement { iv_lgnum }/{ iv_tbnum ALPHA = OUT } not found|
-                                      CHANGING  ct_bapiret = et_bapiret ).
+      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Transfer requirement { iv_lgnum }/{ iv_tbnum ALPHA = OUT } not found|
+                                                        CHANGING  ct_bapiret = et_bapiret ).
     ELSE.
       SELECT * FROM ltbp INTO TABLE @et_ltbp WHERE lgnum = @iv_lgnum AND tbnum = @iv_tbnum ORDER BY tbpos.
     ENDIF.
 
-    zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                       cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                         cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -131,17 +131,17 @@ CLASS zabaputil_cl_bus_wm_tr IMPLEMENTATION.
             error_message = 98
             OTHERS        = 99.
         IF sy-subrc <> 0.
-          zabaputil_cl_bus=>msg_add_sy( EXPORTING iv_context = 'L_TR_CANCEL'
-                                        CHANGING  ct_bapiret = et_bapiret ).
+          zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'L_TR_CANCEL'
+                                                          CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 

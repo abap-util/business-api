@@ -79,18 +79,18 @@ CLASS zabaputil_cl_bus_mm_material IMPLEMENTATION.
 
     SELECT SINGLE * FROM mara INTO @es_mara WHERE matnr = @iv_matnr.
     IF sy-subrc <> 0.
-      zabaputil_cl_bus=>msg_add_text( EXPORTING iv_text    = |Material { iv_matnr } not found|
-                                      CHANGING  ct_bapiret = et_bapiret ).
+      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Material { iv_matnr } not found|
+                                                        CHANGING  ct_bapiret = et_bapiret ).
     ELSEIF iv_werks IS NOT INITIAL.
       SELECT SINGLE * FROM marc INTO @es_marc WHERE matnr = @iv_matnr AND werks = @iv_werks.
       IF sy-subrc <> 0.
-        zabaputil_cl_bus=>msg_add_text( EXPORTING iv_text    = |Material { iv_matnr } not found in plant { iv_werks }|
-                                        CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Material { iv_matnr } not found in plant { iv_werks }|
+                                                          CHANGING  ct_bapiret = et_bapiret ).
       ENDIF.
     ENDIF.
 
-    zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                       cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                         cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -104,8 +104,8 @@ CLASS zabaputil_cl_bus_mm_material IMPLEMENTATION.
 
     TRY.
         ls_headdata = is_headdata.
-        zabaputil_cl_bus=>set_material( EXPORTING iv_matnr = iv_matnr
-                                        CHANGING  cs_data  = ls_headdata ).
+        zabaputil_cl_bus_util_context=>bapi_set_material( EXPORTING iv_matnr = iv_matnr
+                                                          CHANGING  cs_data  = ls_headdata ).
         CALL FUNCTION 'BAPI_MATERIAL_SAVEDATA'
           EXPORTING
             headdata       = ls_headdata
@@ -117,20 +117,20 @@ CLASS zabaputil_cl_bus_mm_material IMPLEMENTATION.
             return         = ls_return
           TABLES
             returnmessages = lt_messages.
-        zabaputil_cl_bus=>msg_add_table( EXPORTING it_table   = lt_messages
-                                         CHANGING  ct_bapiret = et_bapiret ).
-        IF zabaputil_cl_bus=>check_is_error( et_bapiret ) = abap_false.
-          zabaputil_cl_bus=>msg_add_bapiret2( EXPORTING is_return  = ls_return
-                                              CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_table( EXPORTING it_table   = lt_messages
+                                                           CHANGING  ct_bapiret = et_bapiret ).
+        IF zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_false.
+          zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = ls_return
+                                                                CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
       CATCH cx_root INTO DATA(lx_error).
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( EXPORTING iv_commit   = iv_commit
-                              CHANGING  ct_bapiret  = et_bapiret
-                                        cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 

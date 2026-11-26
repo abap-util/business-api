@@ -47,8 +47,8 @@ CLASS zabaputil_cl_bus_ewm_hu IMPLEMENTATION.
     CLEAR: er_header, ev_is_error, et_bapiret.
 
     lv_lgnum   = iv_lgnum.
-    lv_huident = zabaputil_cl_bus=>alpha_in( iv_value  = iv_huident
-                                             iv_length = 20 ).
+    lv_huident = zabaputil_cl_bus_util_context=>conv_alpha_in( iv_value  = iv_huident
+                                                               iv_length = 20 ).
 
     TRY.
         CREATE DATA er_header TYPE (lv_table).
@@ -56,17 +56,17 @@ CLASS zabaputil_cl_bus_ewm_hu IMPLEMENTATION.
         SELECT SINGLE * FROM (lv_table) INTO @<header> WHERE lgnum = @lv_lgnum AND huident = @lv_huident ##WARN_OK.
         IF sy-subrc <> 0.
           CLEAR er_header.
-          zabaputil_cl_bus=>msg_add_text( EXPORTING iv_text    = |Handling unit { iv_huident } not found in warehouse { iv_lgnum }|
-                                          CHANGING  ct_bapiret = et_bapiret ).
+          zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Handling unit { iv_huident } not found in warehouse { iv_lgnum }|
+                                                            CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
       CATCH cx_root INTO DATA(lx_error).
         CLEAR er_header.
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                       cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                         cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -88,12 +88,12 @@ CLASS zabaputil_cl_bus_ewm_hu IMPLEMENTATION.
         SELECT * FROM (lv_table) INTO TABLE @<headers> WHERE lgnum = @lv_lgnum AND lgpla = @lv_lgpla.
       CATCH cx_root INTO DATA(lx_error).
         CLEAR er_headers.
-        zabaputil_cl_bus=>msg_add_exception( EXPORTING ix_error   = lx_error
-                                             CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus=>finish( CHANGING ct_bapiret  = et_bapiret
-                                       cv_is_error = ev_is_error ).
+    zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
+                                                         cv_is_error = ev_is_error ).
 
   ENDMETHOD.
 
