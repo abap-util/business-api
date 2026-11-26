@@ -1,3 +1,0 @@
-FUNCTION-POOL ZOBLOMOV_FG_API_SERVER.       "MESSAGE-ID ..
-
-* INCLUDE LZOBLOMOV_FG_API_SERVERD...        " Local class definition

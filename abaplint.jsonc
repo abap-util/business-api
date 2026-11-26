@@ -1,0 +1,64 @@
+{
+  // business-api targets Standard ABAP (ECC 6.0 EHP7+ and S/4HANA on-premise /
+  // private cloud): the BAPIs it wraps are not released for ABAP Cloud.
+  // SAP standard objects (BAPI structures, data elements, function modules)
+  // are not in the dependency below, so everything outside the own namespace
+  // is void: the syntax of the own code is checked, the SAP types are not.
+  "global": {
+    "files": "/src/**/*.*"
+  },
+  // released SAP APIs (CL_ABAP_*, type pool ABAP) for the syntax check;
+  // everything else of SAP stays void
+  "dependencies": [
+    {
+      "url": "https://github.com/abapedia/steampunk-2305-api-intersect-702",
+      "folder": "/deps",
+      "files": "/src/**/*.*"
+    }
+  ],
+  "syntax": {
+    "version": "v740sp08",
+    "errorNamespace": "^(ZABAPUTIL_|LCL_|LTCL_|LIF_|TY_)"
+  },
+  "rules": {
+    "begin_end_names": true,
+    "check_ddic": true,
+    "check_include": true,
+    "check_syntax": true,
+    "global_class": true,
+    "implement_methods": true,
+    "method_implemented_twice": true,
+    "parser_error": true,
+    "superclass_final": true,
+    "unknown_types": true,
+    "xml_consistency": true,
+    "xml_bom": true,
+    "final_newline": true,
+    "whitespace_end": true,
+    "local_testclass_consistency": true,
+    "wrong_abapdoc_position": true,
+    "abapdoc_html_tag": true,
+    "prefer_xsdbool": true,
+    "redundant_conversion": true,
+    "object_naming": false,
+    "line_length": {
+      "length": 255
+    },
+    "empty_structure": {
+      "loop": true,
+      "if": true,
+      "while": true,
+      "case": true,
+      "select": true,
+      "do": true,
+      "at": true,
+      "try": true,
+      "when": false,
+      "catch": true
+    },
+    "unhandled_classic_exception": true,
+    "forbidden_statement": {
+      "statements": ["Perform", "Form", "Write", "Refresh", "Ranges", "Describe", "Collect"]
+    }
+  }
+}
