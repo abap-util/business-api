@@ -74,5 +74,5 @@ table, `set_material( )` (18 or 40 characters), `refresh_buffers( )` and
 `call_function( )` for dynamic calls.
 
 The message handling runs on renamed copies of [abap-util](https://github.com/abap-util/abap-util)
-(`zabaputil_cl_bus_context`, `zabaputil_cl_bus_msg`, `zabaputil_cx_bus_error`) -
+(`zabaputil_cl_bus_util_context`, `zabaputil_cl_bus_util_msg`, `zabaputil_cx_bus_util_error`) -
 copied, not installed, as abap-util is meant to be consumed.

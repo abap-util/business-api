@@ -56,10 +56,10 @@
       "when": false,
       "catch": true
     },
-    // the vendored copies of abap-util are checked by abap-util's own CI, and
+    // the vendored copies of abap-util (src/00) are checked by abap-util's own CI, and
     // its RTTI helpers deliberately leave REFERENCE_IS_INITIAL to the caller
     "unhandled_classic_exception": {
-      "exclude": ["zabaputil_cl_bus_context", "zabaputil_cl_bus_msg", "zabaputil_cx_bus_error"]
+      "exclude": ["src/00/"]
     },
     "forbidden_statement": {
       "statements": ["Perform", "Form", "Write", "Refresh", "Ranges", "Describe", "Collect"]

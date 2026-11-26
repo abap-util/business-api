@@ -1,6 +1,6 @@
 "! Vendored from abap-util (github.com/abap-util/abap-util, zabaputil_cx_util_error at 9296364),
 "! renamed. Changes made here are synced back to abap-util - see AGENTS.md.
-CLASS zabaputil_cx_bus_error DEFINITION
+CLASS zabaputil_cx_bus_util_error DEFINITION
   PUBLIC
   INHERITING FROM cx_no_check FINAL
   CREATE PUBLIC.
@@ -28,7 +28,7 @@ CLASS zabaputil_cx_bus_error DEFINITION
 ENDCLASS.
 
 
-CLASS zabaputil_cx_bus_error IMPLEMENTATION.
+CLASS zabaputil_cx_bus_util_error IMPLEMENTATION.
   METHOD constructor ##ADT_SUPPRESS_GENERATION.
 
     super->constructor( previous = previous ).
@@ -39,7 +39,7 @@ CLASS zabaputil_cx_bus_error IMPLEMENTATION.
       CATCH cx_root.
         ms_error-text = val.
     ENDTRY.
-    ms_error-uuid = zabaputil_cl_bus_context=>uuid_get_c32( ).
+    ms_error-uuid = zabaputil_cl_bus_util_context=>uuid_get_c32( ).
 
   ENDMETHOD.
 
@@ -57,7 +57,7 @@ CLASS zabaputil_cx_bus_error IMPLEMENTATION.
     IF previous IS BOUND.
       DATA(lo_x) = previous.
       WHILE lo_x IS BOUND.
-        result = result && zabaputil_cl_bus_context=>cv_char_util_newline && lo_x->get_text( ).
+        result = result && zabaputil_cl_bus_util_context=>cv_char_util_newline && lo_x->get_text( ).
         lo_x = lo_x->previous.
       ENDWHILE.
     ENDIF.

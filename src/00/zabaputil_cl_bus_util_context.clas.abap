@@ -1,6 +1,6 @@
 "! Vendored from abap-util (github.com/abap-util/abap-util, zabaputil_cl_util_context at 9296364),
 "! renamed and trimmed to the methods business-api uses. Changes made here are synced back to abap-util - see AGENTS.md.
-CLASS zabaputil_cl_bus_context DEFINITION
+CLASS zabaputil_cl_bus_util_context DEFINITION
   PUBLIC
   CREATE PUBLIC.
 
@@ -980,13 +980,13 @@ CLASS zabaputil_cl_bus_context DEFINITION
     CLASS-DATA gv_check_cloud TYPE abap_bool.
     CLASS-DATA gv_check_cloud_cached TYPE abap_bool.
 
-    " Guards the cycle zabaputil_cx_bus_error=>constructor -> uuid_get_c32 ->
-    " RAISE zabaputil_cx_bus_error -> ... see uuid_get_c32.
+    " Guards the cycle zabaputil_cx_bus_util_error=>constructor -> uuid_get_c32 ->
+    " RAISE zabaputil_cx_bus_util_error -> ... see uuid_get_c32.
     CLASS-DATA gv_uuid_failed TYPE abap_bool.
 
 ENDCLASS.
 
-CLASS zabaputil_cl_bus_context IMPLEMENTATION.
+CLASS zabaputil_cl_bus_util_context IMPLEMENTATION.
 
   METHOD class_constructor.
 
@@ -1029,7 +1029,7 @@ CLASS zabaputil_cl_bus_context IMPLEMENTATION.
     TRY.
         sdescr ?= type.
       CATCH cx_sy_move_cast_error INTO DATA(lx_cast).
-        RAISE EXCEPTION TYPE zabaputil_cx_bus_error
+        RAISE EXCEPTION TYPE zabaputil_cx_bus_util_error
           EXPORTING
             val      = |Include type '{ type->absolute_name }' is not a structure|
             previous = lx_cast.
@@ -1045,7 +1045,7 @@ CLASS zabaputil_cl_bus_context IMPLEMENTATION.
     " readable error instead of a stack-overflow dump. 16 nested include
     " levels is far beyond any real DDIC structure
     IF depth > 16.
-      RAISE EXCEPTION TYPE zabaputil_cx_bus_error
+      RAISE EXCEPTION TYPE zabaputil_cx_bus_util_error
         EXPORTING
           val = `RTTI_INCLUDE_RECURSION - include expansion exceeded 16 levels (cyclic include?)`.
     ENDIF.
@@ -1078,7 +1078,7 @@ CLASS zabaputil_cl_bus_context IMPLEMENTATION.
     " CATCH reaches. The open-abap runtime of the transpiled build declares no
     " EXCEPTIONS for describe_by_data_ref, so the reference is tested here instead
     IF val IS INITIAL.
-      RAISE EXCEPTION TYPE zabaputil_cx_bus_error
+      RAISE EXCEPTION TYPE zabaputil_cx_bus_util_error
         EXPORTING
           val = `RTTI_REFERENCE_IS_INITIAL`.
     ENDIF.
@@ -1103,7 +1103,7 @@ CLASS zabaputil_cl_bus_context IMPLEMENTATION.
       " an initial reference would be REFERENCE_IS_INITIAL, a runtime error -
       " see rtti_get_t_attri_by_oref
       IF val IS INITIAL.
-        RAISE EXCEPTION TYPE zabaputil_cx_bus_error
+        RAISE EXCEPTION TYPE zabaputil_cx_bus_util_error
           EXPORTING
             val = `RTTI_REFERENCE_IS_INITIAL`.
       ENDIF.
@@ -1217,7 +1217,7 @@ CLASS zabaputil_cl_bus_context IMPLEMENTATION.
                 error_message = 1
                 OTHERS        = 2.
             IF sy-subrc <> 0.
-              RAISE EXCEPTION TYPE zabaputil_cx_bus_error
+              RAISE EXCEPTION TYPE zabaputil_cx_bus_util_error
                 EXPORTING
                   val = `GUID_CREATE_FAILED`.
             ENDIF.
@@ -1231,7 +1231,7 @@ CLASS zabaputil_cl_bus_context IMPLEMENTATION.
         " consumer's single top-level catch can turn it into a handled error.
         " ASSERT would raise the uncatchable ASSERTION_FAILED and bypass that
         " catch (short dump instead of a handled error response).
-        " zabaputil_cx_bus_error=>constructor itself calls uuid_get_c32, so the
+        " zabaputil_cx_bus_util_error=>constructor itself calls uuid_get_c32, so the
         " raise below re-enters this method. gv_uuid_failed makes that nested
         " call return an empty UUID instead of raising again (endless recursion
         " until the stack overflows, which would defeat the handled error above).
@@ -1240,7 +1240,7 @@ CLASS zabaputil_cl_bus_context IMPLEMENTATION.
         ENDIF.
         gv_uuid_failed = abap_true.
         TRY.
-            RAISE EXCEPTION TYPE zabaputil_cx_bus_error
+            RAISE EXCEPTION TYPE zabaputil_cx_bus_util_error
               EXPORTING
                 val = lx_uuid.
           CLEANUP.
