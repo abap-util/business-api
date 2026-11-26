@@ -1,0 +1,23 @@
+name: abaplint
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: abaplint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  abaplint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+    - run: npx --yes @abaplint/cli@2.120.120 ./abaplint.jsonc
