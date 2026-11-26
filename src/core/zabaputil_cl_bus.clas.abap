@@ -300,10 +300,13 @@ CLASS zabaputil_cl_bus IMPLEMENTATION.
 
     lv_value = iv_value.
     CONDENSE lv_value.
-    IF lv_value CO '0123456789 ' AND strlen( lv_value ) < iv_length.
-      rv_result = |{ lv_value ALPHA = IN WIDTH = iv_length }|.
-    ELSE.
-      rv_result = lv_value.
+    rv_result = lv_value.
+    " leading zeros for a number - a loop rather than ALPHA = IN WIDTH = ...,
+    " which 7.02 does not take with a variable width
+    IF rv_result CO '0123456789' AND rv_result IS NOT INITIAL.
+      WHILE strlen( rv_result ) < iv_length.
+        rv_result = |0{ rv_result }|.
+      ENDWHILE.
     ENDIF.
 
   ENDMETHOD.

@@ -1,19 +1,31 @@
 [![abaplint](https://github.com/abap-util/business-api/actions/workflows/abaplint.yaml/badge.svg)](https://github.com/abap-util/business-api/actions/workflows/abaplint.yaml)
+[![auto_downport](https://github.com/abap-util/business-api/actions/workflows/auto_downport.yaml/badge.svg)](https://github.com/abap-util/business-api/actions/workflows/auto_downport.yaml)
 
 # business-api
+Class-based access to the SAP logistics BAPIs for Standard ABAP
 
-Simple, class-based access to the SAP logistics BAPIs - one class per business
-object, every action a static method, one error and commit contract for all.
+#### Key Features
+* One class per business object - sales order, delivery, handling unit, goods movement, transfer order, production order, notification, ...
+* Every action a static method with the same contract: `iv_commit` in, `ev_is_error` and `et_bapiret` out
+* No exception leaves a method - classic exceptions and runtime errors come back as `BAPIRET2` messages
+* SD, MM, LE-WM, EWM, PP, PM, QM and CA in one repository; the EWM classes reach `/SCWM/` dynamically, so everything activates in systems without EWM
+* 18 and 40 character material numbers on ECC and S/4HANA alike
 
 #### Compatibility
 * S/4HANA on-premise and private cloud
-* ECC 6.0 from NetWeaver 7.40 SP08
+* ECC 6.0 - from NetWeaver 7.40 SP08 on `main`, from 7.02 on the branch `702`
 * Standard ABAP only - the wrapped BAPIs are not released for ABAP Cloud
 
 #### Installation
-Install via [abapGit](https://abapgit.org).
+Install via [abapGit](https://abapgit.org) - pick the branch that fits the system:
 
-#### One contract for every method
+| Branch | For |
+|---|---|
+| `main` | NetWeaver 7.40 SP08 and higher, S/4HANA |
+| `702` | NetWeaver 7.02 to 7.31 - downported from `main` on every push |
+| `rename_<name>` | a second installation under another name, built on request (see below) |
+
+#### Usage
 ```abap
 zabaputil_cl_bus_mm_goodsmvt=>transfer_storage_location(
   EXPORTING iv_matnr      = lv_matnr
@@ -22,16 +34,14 @@ zabaputil_cl_bus_mm_goodsmvt=>transfer_storage_location(
             iv_lgort_to   = '0002'
             iv_menge      = 5
             iv_meins      = 'PC'
-            iv_commit     = abap_true      " commit on success, rollback on error
+            iv_commit     = abap_true          " commit on success, rollback on error
   IMPORTING ev_mblnr      = DATA(lv_mblnr)
-            ev_is_error   = DATA(lv_error) " abap_true if a message of type E/A/X came back
-            et_bapiret    = DATA(lt_msg) ). " all messages as BAPIRET2
+            ev_is_error   = DATA(lv_is_error)  " abap_true if a message of type E, A or X came back
+            et_bapiret    = DATA(lt_bapiret) ). " all messages as BAPIRET2
 ```
-* `iv_commit` - default `abap_false`: the caller owns the LUW, several calls can
-  be committed together.
-* No exception leaves a method; runtime errors and classic exceptions come back
-  as messages in `et_bapiret`.
+* `iv_commit` defaults to `abap_false`: the caller owns the LUW, and several calls can be committed together.
 * Read methods have no `iv_commit`.
+* Complex input stays a BAPI structure (`is_header TYPE bapisdhd1`); convenience methods with simple parameters cover the common cases.
 
 #### Objects
 
@@ -68,11 +78,24 @@ The EWM classes reach every `/SCWM/` object dynamically, so the whole
 repository activates in systems without EWM.
 
 #### Core
-`zabaputil_cl_bus` holds what every method uses: `finish( )` (error flag,
-commit or rollback), message helpers for `sy-msg`, exceptions and any message
-table, `set_material( )` (18 or 40 characters), `refresh_buffers( )` and
-`call_function( )` for dynamic calls.
+`zabaputil_cl_bus` holds what every method uses: `finish( )` (error flag, commit or rollback), message helpers for `sy-msg`, exceptions and any message table, `set_material( )` (18 or 40 characters), `refresh_buffers( )` and `call_function( )` for dynamic calls.
 
-The message handling runs on renamed copies of [abap-util](https://github.com/abap-util/abap-util)
-(`zabaputil_cl_bus_util_context`, `zabaputil_cl_bus_util_msg`, `zabaputil_cx_bus_util_error`) -
-copied, not installed, as abap-util is meant to be consumed.
+The message handling runs on renamed copies of [abap-util](https://github.com/abap-util/abap-util) in the package `00` - copied, not installed, as abap-util is meant to be consumed:
+
+| Copy | Master in abap-util |
+|---|---|
+| `zabaputil_cl_bus_util_context` | `zabaputil_cl_util_context` (trimmed) |
+| `zabaputil_cl_bus_util_msg` | `zabaputil_cl_util_msg` |
+| `zabaputil_cx_bus_util_error` | `zabaputil_cx_util_error` |
+
+#### Renaming
+To install business-api a second time next to another copy, run the workflow [build_rename](https://github.com/abap-util/business-api/actions/workflows/build_rename.yaml) with a new name - a customer name such as `ZMYAPI` or a registered namespace such as `/MYNS/`. It renames every class (`zabaputil_cl_bus_sd_hu` becomes `zmyapi_cl_bus_sd_hu`) and pushes the result to the branch `rename_<name>`, ready for abapGit.
+
+#### Development
+```bash
+npm ci
+npm run lint       # abaplint at 7.40 SP08
+npm run downport   # rewrite src/ to 7.02 syntax and lint it at v702 - what auto_downport pushes to 702
+npm run rename     # rename every class to the longest prefix build_rename allows
+```
+The conventions every change keeps are in [AGENTS.md](AGENTS.md). Nothing here has been verified on a system yet - the BAPI field and parameter names are only checked when a system activates the classes.

@@ -108,10 +108,26 @@ CLASS-METHODS <action>
 ## Verify
 
 ```bash
-npx @abaplint/cli@2.120.120 ./abaplint.jsonc
+npm ci
+npm run lint       # abaplint at 7.40 SP08
+npm run downport   # 7.02: abaplint --fix + lint at v702 (changes src/ - do not commit that)
+npm run rename     # every class renamed to the 11-character placeholder prefix
 ```
 
 SAP standard types are void for abaplint (no dependency has them), so it checks
 the syntax of the own code, not the BAPI field names. **Activation and the BAPI
 calls are only verified on a system** — `zabaputil_cl_bus` has unit tests, the
 module classes have none yet.
+
+## Downport and renaming
+
+- **`auto_downport`** downports every push to `main` and force-pushes the result
+  to the branch `702`. The downport cannot infer a void type: declare a variable
+  with a BAPI structure type explicitly (`DATA ls_item TYPE bapi2017_gm_item_create.`)
+  instead of `DATA(ls_item) = …`, and build a table of BAPI rows into a typed
+  local table rather than `VALUE #( … )` in a method call.
+- **`build_rename`** (run by hand) renames every class to a chosen name and pushes
+  `rename_<name>`. Object names stay at 29 characters or less, so the longest
+  prefix (10 characters plus `_`) still fits into 30. No object name may appear
+  in a string literal - the rename only follows references. `test_rename` runs
+  the rename on every pull request.

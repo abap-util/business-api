@@ -1,0 +1,38 @@
+name: auto_downport
+
+# every push to main is downported to 7.02 syntax (abaplint --fix), linted at
+# v702 and pushed to the branch 702 - the branch older systems pull with abapGit
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auto_downport
+  cancel-in-progress: true
+
+jobs:
+  auto_downport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+    - run: npm ci
+    - run: npm run downport
+
+    - name: Push the downported source to the branch 702
+      run: |
+        git config user.name 'github-actions[bot]'
+        git config user.email 'github-actions[bot]@users.noreply.github.com'
+        git checkout -B 702
+        git add src
+        git diff --staged --quiet || git commit -m "Downport of $GITHUB_SHA to 7.02"
+        git push --force origin 702

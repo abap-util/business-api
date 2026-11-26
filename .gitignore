@@ -1,0 +1,5 @@
+.github/abaplint/output/
+.github/abaplint/rename_run.jsonc
+.github/out/
+deps/
+node_modules/

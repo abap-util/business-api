@@ -1,0 +1,50 @@
+{
+  // Namespace rename. Renames every class from zabaputil_ to the placeholder
+  // prefix "znamespace_"; the build_rename workflow replaces the placeholder
+  // with the chosen prefix - "<name>_" for a customer name (max. 10 characters,
+  // e.g. zmyapi_) or a registered namespace (max. 10 characters with both
+  // slashes, e.g. /myns/). `npm run rename` runs it against the placeholder,
+  // the longest prefix the workflow allows: every object name stays at 29
+  // characters or less here, so the 11-character placeholder (zabaputil_ has
+  // 10) reaches the 30-character limit at most.
+  "global": {
+    "files": "/../../src/**/*.*"
+  },
+  "dependencies": [
+    {
+      "url": "https://github.com/abapedia/steampunk-2305-api-intersect-702",
+      "folder": "/deps",
+      "files": "/src/**/*.*"
+    }
+  ],
+  "rename": {
+    "output": "output",
+    "patterns": [
+      {
+        "type": "CLAS|INTF|TABL",
+        "oldName": "^zabaputil_(.*)$",
+        "newName": "znamespace_$1"
+      }
+    ]
+  },
+  "syntax": {
+    "version": "v740sp08",
+    "errorNamespace": "^(ZABAPUTIL_|ZNAMESPACE_|LCL_|LTCL_|LIF_|TY_)"
+  },
+  "rules": {
+    "allowed_object_types": {
+      "allowed": ["CLAS", "DEVC", "INTF", "TABL"]
+    },
+    "begin_end_names": true,
+    "check_ddic": true,
+    "check_include": true,
+    "check_syntax": true,
+    "global_class": true,
+    "implement_methods": true,
+    "method_implemented_twice": true,
+    "parser_error": true,
+    "superclass_final": true,
+    "unknown_types": true,
+    "xml_consistency": true
+  }
+}

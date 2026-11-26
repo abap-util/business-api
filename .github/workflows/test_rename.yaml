@@ -1,0 +1,26 @@
+name: test_rename
+
+# renames every class to the longest prefix build_rename allows - a name that
+# would exceed 30 characters, or a reference the rename cannot follow, fails here
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test_rename-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test_rename:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+    - run: npm ci
+    - run: npm run rename

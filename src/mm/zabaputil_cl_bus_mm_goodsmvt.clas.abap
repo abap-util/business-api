@@ -210,17 +210,22 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
 
   METHOD transfer_storage_location.
 
-    DATA(ls_item) = item( iv_bwart = '311'
-                          iv_matnr = iv_matnr
-                          iv_werks = iv_werks
-                          iv_lgort = iv_lgort_from
-                          iv_charg = iv_charg
-                          iv_menge = iv_menge
-                          iv_meins = iv_meins ).
+    DATA ls_item TYPE bapi2017_gm_item_create.
+    DATA lt_item TYPE ty_t_item.
+
+    ls_item = item( iv_bwart = '311'
+                    iv_matnr = iv_matnr
+                    iv_werks = iv_werks
+                    iv_lgort = iv_lgort_from
+                    iv_charg = iv_charg
+                    iv_menge = iv_menge
+                    iv_meins = iv_meins ).
     ls_item-move_stloc = iv_lgort_to.
 
+    INSERT ls_item INTO TABLE lt_item.
+
     create( EXPORTING iv_code     = cs_code-transfer_posting
-                      it_item     = VALUE #( ( ls_item ) )
+                      it_item     = lt_item
                       iv_commit   = iv_commit
             IMPORTING ev_mblnr    = ev_mblnr
                       ev_mjahr    = ev_mjahr
@@ -231,19 +236,24 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
 
   METHOD transfer_plant.
 
-    DATA(ls_item) = item( iv_bwart = '301'
-                          iv_matnr = iv_matnr
-                          iv_werks = iv_werks_from
-                          iv_lgort = iv_lgort_from
-                          iv_charg = iv_charg
-                          iv_menge = iv_menge
-                          iv_meins = iv_meins ).
+    DATA ls_item TYPE bapi2017_gm_item_create.
+    DATA lt_item TYPE ty_t_item.
+
+    ls_item = item( iv_bwart = '301'
+                    iv_matnr = iv_matnr
+                    iv_werks = iv_werks_from
+                    iv_lgort = iv_lgort_from
+                    iv_charg = iv_charg
+                    iv_menge = iv_menge
+                    iv_meins = iv_meins ).
     ls_item-move_plant = iv_werks_to.
     ls_item-move_stloc = iv_lgort_to.
     ls_item-move_batch = iv_charg.
 
+    INSERT ls_item INTO TABLE lt_item.
+
     create( EXPORTING iv_code     = cs_code-transfer_posting
-                      it_item     = VALUE #( ( ls_item ) )
+                      it_item     = lt_item
                       iv_commit   = iv_commit
             IMPORTING ev_mblnr    = ev_mblnr
                       ev_mjahr    = ev_mjahr
@@ -254,14 +264,20 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
 
   METHOD transfer_stock_type.
 
+    DATA ls_item TYPE bapi2017_gm_item_create.
+    DATA lt_item TYPE ty_t_item.
+
+    ls_item = item( iv_bwart = iv_bwart
+                    iv_matnr = iv_matnr
+                    iv_werks = iv_werks
+                    iv_lgort = iv_lgort
+                    iv_charg = iv_charg
+                    iv_menge = iv_menge
+                    iv_meins = iv_meins ).
+    INSERT ls_item INTO TABLE lt_item.
+
     create( EXPORTING iv_code     = cs_code-transfer_posting
-                      it_item     = VALUE #( ( item( iv_bwart = iv_bwart
-                                                     iv_matnr = iv_matnr
-                                                     iv_werks = iv_werks
-                                                     iv_lgort = iv_lgort
-                                                     iv_charg = iv_charg
-                                                     iv_menge = iv_menge
-                                                     iv_meins = iv_meins ) ) )
+                      it_item     = lt_item
                       iv_commit   = iv_commit
             IMPORTING ev_mblnr    = ev_mblnr
                       ev_mjahr    = ev_mjahr
@@ -272,17 +288,22 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
 
   METHOD goods_issue_order.
 
-    DATA(ls_item) = item( iv_bwart = '261'
-                          iv_matnr = iv_matnr
-                          iv_werks = iv_werks
-                          iv_lgort = iv_lgort
-                          iv_charg = iv_charg
-                          iv_menge = iv_menge
-                          iv_meins = iv_meins ).
+    DATA ls_item TYPE bapi2017_gm_item_create.
+    DATA lt_item TYPE ty_t_item.
+
+    ls_item = item( iv_bwart = '261'
+                    iv_matnr = iv_matnr
+                    iv_werks = iv_werks
+                    iv_lgort = iv_lgort
+                    iv_charg = iv_charg
+                    iv_menge = iv_menge
+                    iv_meins = iv_meins ).
     ls_item-orderid = iv_aufnr.
 
+    INSERT ls_item INTO TABLE lt_item.
+
     create( EXPORTING iv_code     = cs_code-goods_issue
-                      it_item     = VALUE #( ( ls_item ) )
+                      it_item     = lt_item
                       iv_commit   = iv_commit
             IMPORTING ev_mblnr    = ev_mblnr
                       ev_mjahr    = ev_mjahr
@@ -292,6 +313,11 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD goods_issue_reservation.
+
+    DATA ls_item  TYPE bapi2017_gm_item_create.
+    DATA lt_item  TYPE ty_t_item.
+    DATA lv_lgort TYPE lgort_d.
+    DATA lv_charg TYPE charg_d.
 
     DATA ls_resb TYPE resb.
 
@@ -306,18 +332,29 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    DATA(ls_item) = item( iv_bwart = ls_resb-bwart
-                          iv_matnr = ls_resb-matnr
-                          iv_werks = ls_resb-werks
-                          iv_lgort = COND #( WHEN iv_lgort IS NOT INITIAL THEN iv_lgort ELSE ls_resb-lgort )
-                          iv_charg = COND #( WHEN iv_charg IS NOT INITIAL THEN iv_charg ELSE ls_resb-charg )
-                          iv_menge = iv_menge
-                          iv_meins = ls_resb-erfme ).
+    lv_lgort = iv_lgort.
+    IF lv_lgort IS INITIAL.
+      lv_lgort = ls_resb-lgort.
+    ENDIF.
+    lv_charg = iv_charg.
+    IF lv_charg IS INITIAL.
+      lv_charg = ls_resb-charg.
+    ENDIF.
+
+    ls_item = item( iv_bwart = ls_resb-bwart
+                    iv_matnr = ls_resb-matnr
+                    iv_werks = ls_resb-werks
+                    iv_lgort = lv_lgort
+                    iv_charg = lv_charg
+                    iv_menge = iv_menge
+                    iv_meins = ls_resb-erfme ).
     ls_item-reserv_no = iv_rsnum.
     ls_item-res_item  = iv_rspos.
 
+    INSERT ls_item INTO TABLE lt_item.
+
     create( EXPORTING iv_code     = cs_code-goods_issue
-                      it_item     = VALUE #( ( ls_item ) )
+                      it_item     = lt_item
                       iv_commit   = iv_commit
             IMPORTING ev_mblnr    = ev_mblnr
                       ev_mjahr    = ev_mjahr
@@ -328,14 +365,20 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
 
   METHOD goods_receipt_initial.
 
+    DATA ls_item TYPE bapi2017_gm_item_create.
+    DATA lt_item TYPE ty_t_item.
+
+    ls_item = item( iv_bwart = '561'
+                    iv_matnr = iv_matnr
+                    iv_werks = iv_werks
+                    iv_lgort = iv_lgort
+                    iv_charg = iv_charg
+                    iv_menge = iv_menge
+                    iv_meins = iv_meins ).
+    INSERT ls_item INTO TABLE lt_item.
+
     create( EXPORTING iv_code     = cs_code-other_receipts
-                      it_item     = VALUE #( ( item( iv_bwart = '561'
-                                                     iv_matnr = iv_matnr
-                                                     iv_werks = iv_werks
-                                                     iv_lgort = iv_lgort
-                                                     iv_charg = iv_charg
-                                                     iv_menge = iv_menge
-                                                     iv_meins = iv_meins ) ) )
+                      it_item     = lt_item
                       iv_commit   = iv_commit
             IMPORTING ev_mblnr    = ev_mblnr
                       ev_mjahr    = ev_mjahr

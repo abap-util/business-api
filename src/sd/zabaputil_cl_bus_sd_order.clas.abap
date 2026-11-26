@@ -190,7 +190,15 @@ CLASS zabaputil_cl_bus_sd_order IMPLEMENTATION.
 
   METHOD change_quantity.
 
-    DATA lv_etenr TYPE etenr.
+    DATA lv_etenr     TYPE etenr.
+    DATA ls_item      TYPE bapisditm.
+    DATA ls_itemx     TYPE bapisditmx.
+    DATA ls_schedule  TYPE bapischdl.
+    DATA ls_schedulex TYPE bapischdlx.
+    DATA lt_item      TYPE ty_t_item.
+    DATA lt_itemx     TYPE ty_t_itemx.
+    DATA lt_schedule  TYPE ty_t_schedule.
+    DATA lt_schedulex TYPE ty_t_schedulex.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -200,11 +208,26 @@ CLASS zabaputil_cl_bus_sd_order IMPLEMENTATION.
       lv_etenr = '0001'.
     ENDIF.
 
+    ls_item-itm_number = iv_posnr.
+    INSERT ls_item INTO TABLE lt_item.
+    ls_itemx-itm_number = iv_posnr.
+    ls_itemx-updateflag = 'U'.
+    INSERT ls_itemx INTO TABLE lt_itemx.
+    ls_schedule-itm_number = iv_posnr.
+    ls_schedule-sched_line = lv_etenr.
+    ls_schedule-req_qty    = iv_quantity.
+    INSERT ls_schedule INTO TABLE lt_schedule.
+    ls_schedulex-itm_number = iv_posnr.
+    ls_schedulex-sched_line = lv_etenr.
+    ls_schedulex-updateflag = 'U'.
+    ls_schedulex-req_qty    = abap_true.
+    INSERT ls_schedulex INTO TABLE lt_schedulex.
+
     change( EXPORTING iv_vbeln     = iv_vbeln
-                      it_item      = VALUE #( ( itm_number = iv_posnr ) )
-                      it_itemx     = VALUE #( ( itm_number = iv_posnr updateflag = 'U' ) )
-                      it_schedule  = VALUE #( ( itm_number = iv_posnr sched_line = lv_etenr req_qty = iv_quantity ) )
-                      it_schedulex = VALUE #( ( itm_number = iv_posnr sched_line = lv_etenr updateflag = 'U' req_qty = abap_true ) )
+                      it_item      = lt_item
+                      it_itemx     = lt_itemx
+                      it_schedule  = lt_schedule
+                      it_schedulex = lt_schedulex
                       iv_commit    = iv_commit
             IMPORTING ev_is_error  = ev_is_error
                       et_bapiret   = et_bapiret ).
@@ -213,9 +236,20 @@ CLASS zabaputil_cl_bus_sd_order IMPLEMENTATION.
 
   METHOD delete_item.
 
+    DATA ls_item  TYPE bapisditm.
+    DATA ls_itemx TYPE bapisditmx.
+    DATA lt_item  TYPE ty_t_item.
+    DATA lt_itemx TYPE ty_t_itemx.
+
+    ls_item-itm_number = iv_posnr.
+    INSERT ls_item INTO TABLE lt_item.
+    ls_itemx-itm_number = iv_posnr.
+    ls_itemx-updateflag = 'D'.
+    INSERT ls_itemx INTO TABLE lt_itemx.
+
     change( EXPORTING iv_vbeln    = iv_vbeln
-                      it_item     = VALUE #( ( itm_number = iv_posnr ) )
-                      it_itemx    = VALUE #( ( itm_number = iv_posnr updateflag = 'D' ) )
+                      it_item     = lt_item
+                      it_itemx    = lt_itemx
                       iv_commit   = iv_commit
             IMPORTING ev_is_error = ev_is_error
                       et_bapiret  = et_bapiret ).
@@ -224,8 +258,11 @@ CLASS zabaputil_cl_bus_sd_order IMPLEMENTATION.
 
   METHOD delete.
 
+    DATA ls_headerx TYPE bapisdh1x.
+
+    ls_headerx-updateflag = 'D'.
     change( EXPORTING iv_vbeln    = iv_vbeln
-                      is_headerx  = VALUE #( updateflag = 'D' )
+                      is_headerx  = ls_headerx
                       iv_commit   = iv_commit
             IMPORTING ev_is_error = ev_is_error
                       et_bapiret  = et_bapiret ).

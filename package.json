@@ -1,0 +1,15 @@
+{
+  "name": "business-api",
+  "private": true,
+  "description": "Class-based access to the SAP logistics BAPIs",
+  "license": "MIT",
+  "scripts": {
+    "lint": "abaplint ./abaplint.jsonc",
+    "downport": "abaplint --fix .github/abaplint/abap_702.jsonc; abaplint .github/abaplint/abap_702.jsonc",
+    "rename": "abaplint .github/abaplint/rename.jsonc --rename",
+    "check": "npm run lint && npm run rename"
+  },
+  "devDependencies": {
+    "@abaplint/cli": "2.120.120"
+  }
+}
