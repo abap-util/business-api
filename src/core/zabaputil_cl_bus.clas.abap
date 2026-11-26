@@ -57,7 +57,7 @@ CLASS zabaputil_cl_bus DEFINITION
     "! Adds the rows of any message table: BAPIRET1/2, BAPI_CORU_RETURN,
     "! BAPI_MATRETURN2, PROTT, MESG and the like. The fields are found by name
     "! (TYPE/MSGTY, ID/MSGID/ARBGB, NUMBER/MSGNO/TXTNR, MESSAGE_V1/MSGV1, ...)
-    "! by the message class of abap-util (zabaputil_cl_bus_msg).
+    "! by the message class of abap-util (zabaputil_cl_bus_util_msg).
     CLASS-METHODS msg_add_table
       IMPORTING
         it_table   TYPE ANY TABLE
@@ -105,7 +105,7 @@ CLASS zabaputil_cl_bus DEFINITION
     " the messages of abap-util's message model as BAPIRET2
     CLASS-METHODS msg_add
       IMPORTING
-        it_msg     TYPE zabaputil_cl_bus_context=>ty_t_msg
+        it_msg     TYPE zabaputil_cl_bus_util_context=>ty_t_msg
         iv_type    TYPE clike OPTIONAL
       CHANGING
         ct_bapiret TYPE bapirettab.
@@ -164,7 +164,7 @@ CLASS zabaputil_cl_bus IMPLEMENTATION.
     ENDIF.
 
     " a message left by EXCEPTIONS error_message is an error, whatever its type
-    msg_add( EXPORTING it_msg     = zabaputil_cl_bus_msg=>msg_get_by_sy( )
+    msg_add( EXPORTING it_msg     = zabaputil_cl_bus_util_msg=>msg_get_by_sy( )
                        iv_type    = COND #( WHEN sy-msgty CA 'AX' AND sy-msgty IS NOT INITIAL THEN sy-msgty ELSE 'E' )
              CHANGING  ct_bapiret = ct_bapiret ).
 
@@ -182,7 +182,7 @@ CLASS zabaputil_cl_bus IMPLEMENTATION.
 
   METHOD msg_add_exception.
 
-    msg_add( EXPORTING it_msg     = zabaputil_cl_bus_msg=>msg_get( ix_error )
+    msg_add( EXPORTING it_msg     = zabaputil_cl_bus_util_msg=>msg_get( ix_error )
                        iv_type    = 'E'
              CHANGING  ct_bapiret = ct_bapiret ).
 
@@ -199,7 +199,7 @@ CLASS zabaputil_cl_bus IMPLEMENTATION.
 
   METHOD msg_add_table.
 
-    msg_add( EXPORTING it_msg     = zabaputil_cl_bus_msg=>msg_get( it_table )
+    msg_add( EXPORTING it_msg     = zabaputil_cl_bus_util_msg=>msg_get( it_table )
              CHANGING  ct_bapiret = ct_bapiret ).
 
   ENDMETHOD.

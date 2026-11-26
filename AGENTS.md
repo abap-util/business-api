@@ -16,8 +16,8 @@ private cloud. The wrapped BAPIs are not released for ABAP Cloud.
 
 ```
 src/                ZABAPUTIL_BUS        root package
-├─ core/            ZABAPUTIL_BUS_CORE   zabaputil_cl_bus: messages, commit, buffers;
-│                                        renamed copies of abap-util (see below)
+├─ 00/              ZABAPUTIL_BUS_00     renamed copies of abap-util (see below) - not edited here
+├─ core/            ZABAPUTIL_BUS_CORE   zabaputil_cl_bus: messages, commit, buffers
 ├─ sd/              ZABAPUTIL_BUS_SD     sales order, delivery, shipment, HU, serial numbers
 ├─ mm/              ZABAPUTIL_BUS_MM     material, goods movement, inventory, PO, requisition
 ├─ wm/              ZABAPUTIL_BUS_WM     LE-WM: transfer order, transfer requirement, storage unit
@@ -33,23 +33,27 @@ the object names are short (`sd_hu`, `mm_goodsmvt`, `wm_to`).
 
 ## Vendored from abap-util — copy, don't depend
 
-`src/core` carries renamed copies of [abap-util](https://github.com/abap-util/abap-util)
+`src/00` carries renamed copies of [abap-util](https://github.com/abap-util/abap-util)
 classes, the way every abap-util consumer does: no dependency to install, no
 name clash with an installed abap-util.
 
+**The rename is mechanical:** `bus_` is inserted after `zabaputil_cl_` /
+`zabaputil_cx_`, the rest of the name stays - so every copy names its master,
+and `util` (no module) keeps the copies apart from the business classes.
+
 | Copy here | Master in abap-util | Scope |
 |---|---|---|
-| `zabaputil_cl_bus_context` | `zabaputil_cl_util_context` | trimmed to the methods the message class needs, with their helpers |
-| `zabaputil_cl_bus_msg` | `zabaputil_cl_util_msg` | as is - plus `ARBGB`/`TXTNR` in `msg_map( )` (MESG), to be synced back |
-| `zabaputil_cx_bus_error` | `zabaputil_cx_util_error` | as is |
+| `zabaputil_cl_bus_util_context` | `zabaputil_cl_util_context` | trimmed to the methods the message class needs, with their helpers |
+| `zabaputil_cl_bus_util_msg` | `zabaputil_cl_util_msg` | as is - plus `ARBGB`/`TXTNR` in `msg_map( )` (MESG), to be synced back |
+| `zabaputil_cx_bus_util_error` | `zabaputil_cx_util_error` | as is |
 
 Copied at abap-util `9296364`. `zabaputil_cl_bus` turns their message model
 (`ty_t_msg`) into `BAPIRET2`. Do not edit the copies for style: a fix goes
-into abap-util and is copied back, or is made here and synced back. When the
-copy is refreshed, rename `zabaputil_cl_util_context` → `zabaputil_cl_bus_context`,
-`zabaputil_cl_util_msg` → `zabaputil_cl_bus_msg`, `zabaputil_cx_util_error` →
-`zabaputil_cx_bus_error`, and trim the context class to the closure of the
-methods the message class and the exception call.
+into abap-util and is copied back, or is made here and synced back. To
+refresh a copy, take the master, apply the rename (back: `bus_util_` →
+`util_`), and trim the context class to the closure of the methods the
+message class and the exception call. A new copy must stay within 30
+characters after the rename.
 
 ## The method contract — every method keeps it
 
