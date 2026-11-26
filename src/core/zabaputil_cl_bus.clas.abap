@@ -56,7 +56,8 @@ CLASS zabaputil_cl_bus DEFINITION
 
     "! Adds the rows of any message table: BAPIRET1/2, BAPI_CORU_RETURN,
     "! BAPI_MATRETURN2, PROTT, MESG and the like. The fields are found by name
-    "! (TYPE/MSGTY, ID/MSGID/ARBGB, NUMBER/MSGNO/TXTNR, MESSAGE_V1/MSGV1, ...).
+    "! (TYPE/MSGTY, ID/MSGID/ARBGB, NUMBER/MSGNO/TXTNR, MESSAGE_V1/MSGV1, ...)
+    "! by the message class of abap-util (zabaputil_cl_bus_msg).
     CLASS-METHODS msg_add_table
       IMPORTING
         it_table   TYPE ANY TABLE
@@ -101,12 +102,13 @@ CLASS zabaputil_cl_bus DEFINITION
   PROTECTED SECTION.
   PRIVATE SECTION.
 
-    CLASS-METHODS get_component
+    " the messages of abap-util's message model as BAPIRET2
+    CLASS-METHODS msg_add
       IMPORTING
-        is_row           TYPE any
-        iv_names         TYPE clike
-      RETURNING
-        VALUE(rv_result) TYPE string.
+        it_msg     TYPE zabaputil_cl_bus_context=>ty_t_msg
+        iv_type    TYPE clike OPTIONAL
+      CHANGING
+        ct_bapiret TYPE bapirettab.
 
 ENDCLASS.
 
@@ -155,25 +157,16 @@ CLASS zabaputil_cl_bus IMPLEMENTATION.
 
   METHOD msg_add_sy.
 
-    DATA ls_return TYPE bapiret2.
-
-    IF sy-msgid IS INITIAL OR sy-msgno IS INITIAL AND sy-msgv1 IS INITIAL.
+    IF sy-msgid IS INITIAL.
       msg_add_text( EXPORTING iv_text    = |{ iv_context } failed|
                     CHANGING  ct_bapiret = ct_bapiret ).
       RETURN.
     ENDIF.
 
-    ls_return-type       = COND #( WHEN sy-msgty CA 'EAX' AND sy-msgty IS NOT INITIAL THEN sy-msgty ELSE 'E' ).
-    ls_return-id         = sy-msgid.
-    ls_return-number     = sy-msgno.
-    ls_return-message_v1 = sy-msgv1.
-    ls_return-message_v2 = sy-msgv2.
-    ls_return-message_v3 = sy-msgv3.
-    ls_return-message_v4 = sy-msgv4.
-    MESSAGE ID sy-msgid TYPE 'I' NUMBER sy-msgno
-      WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4
-      INTO ls_return-message.
-    INSERT ls_return INTO TABLE ct_bapiret.
+    " a message left by EXCEPTIONS error_message is an error, whatever its type
+    msg_add( EXPORTING it_msg     = zabaputil_cl_bus_msg=>msg_get_by_sy( )
+                       iv_type    = COND #( WHEN sy-msgty CA 'AX' AND sy-msgty IS NOT INITIAL THEN sy-msgty ELSE 'E' )
+             CHANGING  ct_bapiret = ct_bapiret ).
 
   ENDMETHOD.
 
@@ -189,21 +182,9 @@ CLASS zabaputil_cl_bus IMPLEMENTATION.
 
   METHOD msg_add_exception.
 
-    DATA lx_error TYPE REF TO cx_root.
-    DATA lv_text  TYPE string.
-
-    lx_error = ix_error.
-    WHILE lx_error IS BOUND.
-      IF lv_text IS INITIAL.
-        lv_text = lx_error->get_text( ).
-      ELSE.
-        lv_text = |{ lv_text } / { lx_error->get_text( ) }|.
-      ENDIF.
-      lx_error = lx_error->previous.
-    ENDWHILE.
-
-    msg_add_text( EXPORTING iv_text    = lv_text
-                  CHANGING  ct_bapiret = ct_bapiret ).
+    msg_add( EXPORTING it_msg     = zabaputil_cl_bus_msg=>msg_get( ix_error )
+                       iv_type    = 'E'
+             CHANGING  ct_bapiret = ct_bapiret ).
 
   ENDMETHOD.
 
@@ -218,44 +199,27 @@ CLASS zabaputil_cl_bus IMPLEMENTATION.
 
   METHOD msg_add_table.
 
-    DATA ls_return TYPE bapiret2.
-    FIELD-SYMBOLS <row> TYPE any.
-
-    LOOP AT it_table ASSIGNING <row>.
-      CLEAR ls_return.
-      ls_return-type       = get_component( is_row = <row> iv_names = 'TYPE MSGTY MSG_TYPE' ).
-      ls_return-id         = get_component( is_row = <row> iv_names = 'ID MSGID ARBGB MSG_ID' ).
-      ls_return-number     = get_component( is_row = <row> iv_names = 'NUMBER MSGNO MSGNR TXTNR MSG_NUMBER' ).
-      ls_return-message_v1 = get_component( is_row = <row> iv_names = 'MESSAGE_V1 MSGV1 MSG_V1' ).
-      ls_return-message_v2 = get_component( is_row = <row> iv_names = 'MESSAGE_V2 MSGV2 MSG_V2' ).
-      ls_return-message_v3 = get_component( is_row = <row> iv_names = 'MESSAGE_V3 MSGV3 MSG_V3' ).
-      ls_return-message_v4 = get_component( is_row = <row> iv_names = 'MESSAGE_V4 MSGV4 MSG_V4' ).
-      ls_return-message    = get_component( is_row = <row> iv_names = 'MESSAGE TEXT MSGTX' ).
-      IF ls_return-message IS INITIAL AND ls_return-id IS NOT INITIAL.
-        MESSAGE ID ls_return-id TYPE 'I' NUMBER ls_return-number
-          WITH ls_return-message_v1 ls_return-message_v2 ls_return-message_v3 ls_return-message_v4
-          INTO ls_return-message.
-      ENDIF.
-      msg_add_bapiret2( EXPORTING is_return  = ls_return
-                        CHANGING  ct_bapiret = ct_bapiret ).
-    ENDLOOP.
+    msg_add( EXPORTING it_msg     = zabaputil_cl_bus_msg=>msg_get( it_table )
+             CHANGING  ct_bapiret = ct_bapiret ).
 
   ENDMETHOD.
 
-  METHOD get_component.
+  METHOD msg_add.
 
-    DATA lt_name TYPE STANDARD TABLE OF string WITH EMPTY KEY.
-    DATA lv_name TYPE string.
-    FIELD-SYMBOLS <value> TYPE any.
+    DATA ls_return TYPE bapiret2.
 
-    SPLIT iv_names AT space INTO TABLE lt_name.
-    LOOP AT lt_name INTO lv_name.
-      UNASSIGN <value>.
-      ASSIGN COMPONENT lv_name OF STRUCTURE is_row TO <value>.
-      IF <value> IS ASSIGNED.
-        rv_result = <value>.
-        RETURN.
-      ENDIF.
+    LOOP AT it_msg INTO DATA(ls_msg).
+      CLEAR ls_return.
+      ls_return-type       = COND #( WHEN iv_type IS NOT INITIAL THEN iv_type ELSE to_upper( ls_msg-type ) ).
+      ls_return-id         = ls_msg-id.
+      ls_return-number     = ls_msg-no.
+      ls_return-message    = ls_msg-text.
+      ls_return-message_v1 = ls_msg-v1.
+      ls_return-message_v2 = ls_msg-v2.
+      ls_return-message_v3 = ls_msg-v3.
+      ls_return-message_v4 = ls_msg-v4.
+      msg_add_bapiret2( EXPORTING is_return  = ls_return
+                        CHANGING  ct_bapiret = ct_bapiret ).
     ENDLOOP.
 
   ENDMETHOD.

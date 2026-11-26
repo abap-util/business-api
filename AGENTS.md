@@ -16,7 +16,8 @@ private cloud. The wrapped BAPIs are not released for ABAP Cloud.
 
 ```
 src/                ZABAPUTIL_BUS        root package
-├─ core/            ZABAPUTIL_BUS_CORE   zabaputil_cl_bus: messages, commit, buffers
+├─ core/            ZABAPUTIL_BUS_CORE   zabaputil_cl_bus: messages, commit, buffers;
+│                                        renamed copies of abap-util (see below)
 ├─ sd/              ZABAPUTIL_BUS_SD     sales order, delivery, shipment, HU, serial numbers
 ├─ mm/              ZABAPUTIL_BUS_MM     material, goods movement, inventory, PO, requisition
 ├─ wm/              ZABAPUTIL_BUS_WM     LE-WM: transfer order, transfer requirement, storage unit
@@ -29,6 +30,26 @@ src/                ZABAPUTIL_BUS        root package
 
 Class names: `zabaputil_cl_bus_<module>_<object>` — at most 30 characters, so
 the object names are short (`sd_hu`, `mm_goodsmvt`, `wm_to`).
+
+## Vendored from abap-util — copy, don't depend
+
+`src/core` carries renamed copies of [abap-util](https://github.com/abap-util/abap-util)
+classes, the way every abap-util consumer does: no dependency to install, no
+name clash with an installed abap-util.
+
+| Copy here | Master in abap-util | Scope |
+|---|---|---|
+| `zabaputil_cl_bus_context` | `zabaputil_cl_util_context` | trimmed to the methods the message class needs, with their helpers |
+| `zabaputil_cl_bus_msg` | `zabaputil_cl_util_msg` | as is - plus `ARBGB`/`TXTNR` in `msg_map( )` (MESG), to be synced back |
+| `zabaputil_cx_bus_error` | `zabaputil_cx_util_error` | as is |
+
+Copied at abap-util `9296364`. `zabaputil_cl_bus` turns their message model
+(`ty_t_msg`) into `BAPIRET2`. Do not edit the copies for style: a fix goes
+into abap-util and is copied back, or is made here and synced back. When the
+copy is refreshed, rename `zabaputil_cl_util_context` → `zabaputil_cl_bus_context`,
+`zabaputil_cl_util_msg` → `zabaputil_cl_bus_msg`, `zabaputil_cx_util_error` →
+`zabaputil_cx_bus_error`, and trim the context class to the closure of the
+methods the message class and the exception call.
 
 ## The method contract — every method keeps it
 
