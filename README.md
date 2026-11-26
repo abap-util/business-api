@@ -77,10 +77,10 @@ zabaputil_cl_bus_mm_goodsmvt=>transfer_storage_location(
 The EWM classes reach every `/SCWM/` object dynamically, so the whole
 repository activates in systems without EWM.
 
-#### Core
+#### Package 00
 `zabaputil_cl_bus` holds what every method uses: `finish( )` (error flag, commit or rollback), message helpers for `sy-msg`, exceptions and any message table, `set_material( )` (18 or 40 characters), `refresh_buffers( )` and `call_function( )` for dynamic calls.
 
-The message handling runs on renamed copies of [abap-util](https://github.com/abap-util/abap-util) in the package `00` - copied, not installed, as abap-util is meant to be consumed:
+The message handling runs on renamed copies of [abap-util](https://github.com/abap-util/abap-util) in the same package - copied, not installed, as abap-util is meant to be consumed:
 
 | Copy | Master in abap-util |
 |---|---|
