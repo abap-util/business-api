@@ -1,6 +1,6 @@
 {
   "master": "abap-util/abap-util",
-  "commit": "9e2ba2a8a334b6b3c953082afc61ea0751224623",
+  "commit": "274a05a92b7171463e6228dabacf4cc445862305",
   "rename": [
     [
       "zabaputil_cl_bus_util_",
