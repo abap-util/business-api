@@ -140,6 +140,13 @@ CLASS zabaputil_cl_bus_ewm_wt DEFINITION
       CHANGING
         ct_bapiret    TYPE bapirettab.
 
+    "! the warehouse number in a data object of type /SCWM/LGNUM, for a dynamic call
+    CLASS-METHODS lgnum_ref
+      IMPORTING
+        iv_lgnum         TYPE clike
+      RETURNING
+        VALUE(rr_result) TYPE REF TO data.
+
     CLASS-METHODS set_component
       IMPORTING
         iv_name    TYPE clike
@@ -182,9 +189,7 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
 
         " a field the structure does not have is an error: no task without it
         IF zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_false.
-          CREATE DATA lr_lgnum TYPE ('/SCWM/LGNUM').
-          ASSIGN lr_lgnum->* TO <field>.
-          <field> = iv_lgnum.
+          lr_lgnum = lgnum_ref( iv_lgnum ).
           CREATE DATA lr_tanum TYPE ('/SCWM/TANUM').
 
           zabaputil_cl_bus_util_context=>bapi_call_function(
@@ -401,9 +406,7 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
         ENDIF.
 
         IF zabaputil_cl_bus_util_context=>bapi_check_is_error( ct_bapiret ) = abap_false.
-          CREATE DATA lr_lgnum TYPE ('/SCWM/LGNUM').
-          ASSIGN lr_lgnum->* TO <field>.
-          <field> = iv_lgnum.
+          lr_lgnum = lgnum_ref( iv_lgnum ).
 
           zabaputil_cl_bus_util_context=>bapi_call_function(
                               EXPORTING iv_name    = iv_function
@@ -435,9 +438,7 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
     CLEAR ev_tanum.
 
     TRY.
-        CREATE DATA lr_lgnum TYPE ('/SCWM/LGNUM').
-        ASSIGN lr_lgnum->* TO <field>.
-        <field> = iv_lgnum.
+        lr_lgnum = lgnum_ref( iv_lgnum ).
         GET REFERENCE OF it_rows INTO lr_rows.
 
         ls_param-kind  = abap_func_exporting.
@@ -476,6 +477,16 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = ct_bapiret ).
     ENDTRY.
+
+  ENDMETHOD.
+
+  METHOD lgnum_ref.
+
+    FIELD-SYMBOLS <lgnum> TYPE any.
+
+    CREATE DATA rr_result TYPE ('/SCWM/LGNUM').
+    ASSIGN rr_result->* TO <lgnum>.
+    <lgnum> = iv_lgnum.
 
   ENDMETHOD.
 
