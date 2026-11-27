@@ -149,7 +149,10 @@ nothing commits or rolls back on its own.
 - **Material numbers go through `zabaputil_cl_bus_util_context=>bapi_set_material( )`**, which
   fills `MATERIAL_LONG` on S/4HANA and `MATERIAL` elsewhere.
 - **Reset the buffers** (`zabaputil_cl_bus_util_context=>bapi_refresh_buffers( )`) before a
-  write that reads delivery, HU or serial number data.
+  write that reads delivery, HU or serial number data - **only with `iv_commit = abap_true`**.
+  With `abap_false` the caller owns the LUW, and the buffers hold what its earlier calls
+  posted and has not committed yet (an HU just created); a reset drops it, and the next
+  call of the LUW no longer finds it (README, "Usage").
 - **EWM:** no static reference to a `/SCWM/` object (types, tables, function
   modules). Create the data dynamically and call through
   `zabaputil_cl_bus_util_context=>bapi_call_function( )`, so the classes activate in systems
