@@ -10,7 +10,10 @@ CLASS zabaputil_cl_bus_ewm_stock DEFINITION
     "! product id as the EWM tables and modules hold it (16 bytes)
     TYPES ty_matid TYPE x LENGTH 16.
 
-    "! Converts a product number to the product id (/SCWM/CL_UI_STOCK_FIELDS)
+    "! Converts a product number to the product id (/SCWM/CL_UI_STOCK_FIELDS).
+    "! A number as typed (4711) is found in its internal format as well: an
+    "! all-numeric value that is not found as given is looked up again padded with
+    "! leading zeros to 18 places, as the conversion exit MATN1 stores it.
     CLASS-METHODS read_product_id
       IMPORTING
         iv_matnr    TYPE clike
@@ -53,6 +56,7 @@ CLASS zabaputil_cl_bus_ewm_stock IMPLEMENTATION.
 
     DATA lo_fields TYPE REF TO object.
     DATA lv_matnr  TYPE c LENGTH 40.
+    DATA lv_padded TYPE c LENGTH 40.
 
     CLEAR: ev_matid, ev_is_error, et_bapiret.
 
@@ -65,6 +69,18 @@ CLASS zabaputil_cl_bus_ewm_stock IMPLEMENTATION.
             iv_matnr = lv_matnr
           RECEIVING
             ev_matid = ev_matid.
+        " whether the method converts the number itself is not verified: the
+        " internal format is tried second, so a number found as given is
+        " never looked up differently
+        lv_padded = zabaputil_cl_bus_util_context=>conv_alpha_in( iv_value  = lv_matnr
+                                                                  iv_length = 18 ).
+        IF ev_matid IS INITIAL AND lv_padded <> lv_matnr.
+          CALL METHOD lo_fields->('GET_MATID_BY_NO')
+            EXPORTING
+              iv_matnr = lv_padded
+            RECEIVING
+              ev_matid = ev_matid.
+        ENDIF.
         IF ev_matid IS INITIAL.
           zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Product { iv_matnr } not found|
                                                             CHANGING  ct_bapiret = et_bapiret ).

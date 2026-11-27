@@ -107,11 +107,15 @@ CLASS zabaputil_cl_bus_mm_goodsmvt DEFINITION
     "! Goods issue for a reservation item, with the movement type of the reservation.
     "! A transfer reservation (movement type 3xx) is posted as transfer posting (GM code 04)
     "! to the receiving plant and storage location of the reservation, any other with GM code 03.
+    "! @parameter iv_menge | the quantity, in iv_meins
+    "! @parameter iv_meins | the unit of iv_menge; initial: the unit of entry of the
+    "!                       reservation (RESB-ERFME), not necessarily the base unit
     CLASS-METHODS goods_issue_reservation
       IMPORTING
         iv_rsnum    TYPE rsnum
         iv_rspos    TYPE rspos
         iv_menge    TYPE erfmg
+        iv_meins    TYPE erfme OPTIONAL
         iv_lgort    TYPE lgort_d OPTIONAL
         iv_charg    TYPE charg_d OPTIONAL
         iv_commit   TYPE abap_bool DEFAULT abap_false
@@ -238,6 +242,9 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
                     iv_menge = iv_menge
                     iv_meins = iv_meins ).
     ls_item-move_stloc = iv_lgort_to.
+    " the receiving batch, as in transfer_plant( ): a storage location
+    " transfer keeps the batch
+    ls_item-move_batch = iv_charg.
 
     post_single( EXPORTING iv_code     = cs_code-transfer_posting
                            is_item     = ls_item
@@ -325,8 +332,10 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
     DATA lv_lgort TYPE lgort_d.
     DATA lv_charg TYPE charg_d.
     DATA lv_code  TYPE bapi2017_gm_code-gm_code.
+    DATA lv_meins TYPE erfme.
 
     DATA ls_resb TYPE resb.
+    FIELD-SYMBOLS <umcha> TYPE any.
 
     CLEAR: ev_mblnr, ev_mjahr, ev_is_error, et_bapiret.
 
@@ -347,6 +356,10 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
     IF lv_charg IS INITIAL.
       lv_charg = ls_resb-charg.
     ENDIF.
+    lv_meins = iv_meins.
+    IF lv_meins IS INITIAL.
+      lv_meins = ls_resb-erfme.
+    ENDIF.
 
     ls_item = item( iv_bwart = ls_resb-bwart
                     iv_matnr = ls_resb-matnr
@@ -354,7 +367,7 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
                     iv_lgort = lv_lgort
                     iv_charg = lv_charg
                     iv_menge = iv_menge
-                    iv_meins = ls_resb-erfme ).
+                    iv_meins = lv_meins ).
     ls_item-reserv_no = iv_rsnum.
     ls_item-res_item  = iv_rspos.
 
@@ -363,6 +376,13 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
       lv_code = cs_code-transfer_posting.
       ls_item-move_plant = ls_resb-umwrk.
       ls_item-move_stloc = ls_resb-umlgo.
+      " the receiving batch where the reservation names one - by name, as
+      " the field is not verified on every release; otherwise the BAPI
+      " derives it, as before
+      ASSIGN COMPONENT 'UMCHA' OF STRUCTURE ls_resb TO <umcha>.
+      IF sy-subrc = 0 AND <umcha> IS NOT INITIAL.
+        ls_item-move_batch = <umcha>.
+      ENDIF.
     ELSE.
       lv_code = cs_code-goods_issue.
     ENDIF.
