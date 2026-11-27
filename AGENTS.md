@@ -25,7 +25,7 @@ src/                ZABAPUTIL_BUS        root package
 ├─ sd/              ZABAPUTIL_BUS_SD     sales order, delivery, shipment, HU, serial numbers
 ├─ mm/              ZABAPUTIL_BUS_MM     material, goods movement, inventory, PO, requisition
 ├─ wm/              ZABAPUTIL_BUS_WM     LE-WM: transfer order, transfer requirement, storage unit
-├─ ewm/             ZABAPUTIL_BUS_EWM    warehouse task, HU, stock, resource
+├─ ewm/             ZABAPUTIL_BUS_EWM    warehouse task, warehouse order, HU, stock, storage bin, physical inventory, resource
 ├─ pp/              ZABAPUTIL_BUS_PP     production order, confirmation
 ├─ pm/              ZABAPUTIL_BUS_PM     notification, measurement document, equipment
 ├─ qm/              ZABAPUTIL_BUS_QM     quality notification, inspection lot
@@ -124,6 +124,17 @@ nothing commits or rolls back on its own.
 - **Nothing customer-specific.** No Z fields, no customizing values, no
   organizational units in the code — everything is a parameter. Sources are the
   SAP standard interfaces and their documentation only.
+- **Everything is neutral — no trace of a customer, a project or a system.**
+  This repository is public. Nothing in it names or hints at where a
+  requirement came from: no customer, partner or project name, no customer or
+  partner namespace (`/XYZ/`), no system id, client, host or URL, no user name,
+  no real warehouse, plant, material or document number, no ticket or transport
+  number. That holds for code, comments, ABAP Doc, tests and their data, the
+  README, this file, commit messages, branch names, pull requests and issues.
+  A method is described by the SAP standard function it wraps, never by the
+  process or the installation that needed it. Code from a customer system is
+  never copied in: a method is written here, against the standard interface.
+  Examples use the neutral values SAP documentation uses (`1000`, `0001`).
 - **Complex BAPI input stays a BAPI structure** (`is_header TYPE bapisdhd1`);
   convenience methods with simple parameters are added for the common cases.
 - **Material numbers go through `zabaputil_cl_bus_util_context=>bapi_set_material( )`**, which

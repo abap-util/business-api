@@ -64,9 +64,12 @@ zabaputil_cl_bus_mm_goodsmvt=>transfer_storage_location(
 | WM | `zabaputil_cl_bus_wm_to` | `create`, `create_from_delivery`, `create_from_requirement`, `read`, `confirm`, `cancel` |
 | WM | `zabaputil_cl_bus_wm_tr` | `create`, `read`, `cancel` |
 | WM | `zabaputil_cl_bus_wm_su` | `read`, `move` |
-| EWM | `zabaputil_cl_bus_ewm_wt` | `create_hu`, `read`, `confirm`, `cancel` |
-| EWM | `zabaputil_cl_bus_ewm_hu` | `read`, `read_by_bin` |
-| EWM | `zabaputil_cl_bus_ewm_stock` | `read_bin`, `read_by_bin` |
+| EWM | `zabaputil_cl_bus_ewm_wt` | `create`, `create_product`, `create_hu`, `change`, `read`, `confirm`, `cancel` |
+| EWM | `zabaputil_cl_bus_ewm_who` | `maintain_hus` |
+| EWM | `zabaputil_cl_bus_ewm_hu` | `create`, `read`, `read_by_bin` |
+| EWM | `zabaputil_cl_bus_ewm_stock` | `read_product_id`, `read_bin`, `read_by_bin` |
+| EWM | `zabaputil_cl_bus_ewm_bin` | `maintain` |
+| EWM | `zabaputil_cl_bus_ewm_pi` | `count` |
 | EWM | `zabaputil_cl_bus_ewm_resource` | `read` |
 | PP | `zabaputil_cl_bus_pp_order` | `read`, `release`, `check_availability`, `complete_technically` |
 | PP | `zabaputil_cl_bus_pp_confirm` | `read_proposal`, `create`, `cancel` |
