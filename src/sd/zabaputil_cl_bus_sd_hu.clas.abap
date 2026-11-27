@@ -141,6 +141,10 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
+    IF ev_exidv IS INITIAL AND zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_false.
+      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = 'No handling unit created'
+                                                        CHANGING  ct_bapiret = et_bapiret ).
+    ENDIF.
     zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
                                                 CHANGING  ct_bapiret  = et_bapiret
                                                           cv_is_error = ev_is_error ).

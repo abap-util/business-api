@@ -90,6 +90,10 @@ CLASS zabaputil_cl_bus_qm_notif IMPLEMENTATION.
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
+    IF ev_qmnum IS INITIAL AND zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_false.
+      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = 'No quality notification created'
+                                                        CHANGING  ct_bapiret = et_bapiret ).
+    ENDIF.
     zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
                                                 CHANGING  ct_bapiret  = et_bapiret
                                                           cv_is_error = ev_is_error ).

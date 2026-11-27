@@ -56,6 +56,8 @@ CLASS zabaputil_cl_bus_ca_status IMPLEMENTATION.
     CLEAR: et_status, ev_text_system, ev_text_user, ev_is_error, et_bapiret.
 
     TRY.
+        " a plain RAISE in the module would leave an older message in sy-msg
+        CLEAR: sy-msgid, sy-msgno.
         CALL FUNCTION 'STATUS_READ'
           EXPORTING
             objnr            = iv_objnr
@@ -110,6 +112,7 @@ CLASS zabaputil_cl_bus_ca_status IMPLEMENTATION.
     CLEAR: ev_is_error, et_bapiret.
 
     TRY.
+        CLEAR: sy-msgid, sy-msgno.
         CALL FUNCTION 'STATUS_CHANGE_EXTERN'
           EXPORTING
             objnr         = iv_objnr
@@ -123,6 +126,7 @@ CLASS zabaputil_cl_bus_ca_status IMPLEMENTATION.
                                                           CHANGING  ct_bapiret = et_bapiret ).
         ELSE.
           " the change only sits in the status buffer - this writes it with the commit
+          CLEAR: sy-msgid, sy-msgno.
           CALL FUNCTION 'STATUS_UPDATE_ON_COMMIT'
             EXCEPTIONS
               error_message = 98

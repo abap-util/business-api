@@ -67,6 +67,8 @@ CLASS zabaputil_cl_bus_wm_tr IMPLEMENTATION.
     TRY.
         lv_anfme = iv_menge.
         lv_altme = iv_meins.
+        " a plain RAISE in the module would leave an older message in sy-msg
+        CLEAR: sy-msgid, sy-msgno.
         CALL FUNCTION 'L_TR_CREATE'
           EXPORTING
             i_lgnum       = iv_lgnum
@@ -122,6 +124,7 @@ CLASS zabaputil_cl_bus_wm_tr IMPLEMENTATION.
     CLEAR: ev_is_error, et_bapiret.
 
     TRY.
+        CLEAR: sy-msgid, sy-msgno.
         CALL FUNCTION 'L_TR_CANCEL'
           EXPORTING
             i_lgnum       = iv_lgnum

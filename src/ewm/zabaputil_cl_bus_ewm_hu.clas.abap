@@ -86,6 +86,8 @@ CLASS zabaputil_cl_bus_ewm_hu IMPLEMENTATION.
           CALL METHOD ('/SCWM/CL_WM_PACKING')=>('GET_INSTANCE')
             IMPORTING
               eo_instance = lo_pack.
+          " a plain RAISE in the method would leave an older message in sy-msg
+          CLEAR: sy-msgid, sy-msgno.
           CALL METHOD lo_pack->('INIT')
             EXPORTING
               iv_lgnum = lv_lgnum
@@ -97,6 +99,7 @@ CLASS zabaputil_cl_bus_ewm_hu IMPLEMENTATION.
           ELSE.
             CREATE DATA er_header TYPE ('/SCWM/S_HUHDR_INT').
             ASSIGN er_header->* TO <header>.
+            CLEAR: sy-msgid, sy-msgno.
             CALL METHOD lo_pack->('CREATE_HU')
               EXPORTING
                 iv_pmat    = lv_matid
@@ -110,6 +113,7 @@ CLASS zabaputil_cl_bus_ewm_hu IMPLEMENTATION.
               zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'CREATE_HU'
                                                               CHANGING  ct_bapiret = et_bapiret ).
             ELSE.
+              CLEAR: sy-msgid, sy-msgno.
               CALL METHOD lo_pack->('SAVE')
                 EXPORTING
                   iv_commit = lv_false
@@ -133,6 +137,10 @@ CLASS zabaputil_cl_bus_ewm_hu IMPLEMENTATION.
       ENDTRY.
     ENDIF.
 
+    IF ev_huident IS INITIAL AND zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_false.
+      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = 'No handling unit created'
+                                                        CHANGING  ct_bapiret = et_bapiret ).
+    ENDIF.
     IF zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_true.
       CLEAR: ev_huident, er_header.
     ENDIF.

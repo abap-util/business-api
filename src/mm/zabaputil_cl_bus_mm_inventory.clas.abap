@@ -36,6 +36,8 @@ CLASS zabaputil_cl_bus_mm_inventory DEFINITION
         et_bapiret  TYPE bapirettab.
 
     "! Posts the differences of a counted document (BAPI_MATPHYSINV_POSTDIFF)
+    "! @parameter ev_mblnr | the material document of the posting
+    "! @parameter ev_mjahr | its year: the year of the posting date, as for every material document
     CLASS-METHODS post_differences
       IMPORTING
         iv_iblnr    TYPE iblnr
@@ -44,6 +46,7 @@ CLASS zabaputil_cl_bus_mm_inventory DEFINITION
         iv_commit   TYPE abap_bool DEFAULT abap_false
       EXPORTING
         ev_mblnr    TYPE mblnr
+        ev_mjahr    TYPE mjahr
         ev_is_error TYPE abap_bool
         et_bapiret  TYPE bapirettab.
 
@@ -79,6 +82,10 @@ CLASS zabaputil_cl_bus_mm_inventory IMPLEMENTATION.
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
+    IF ev_iblnr IS INITIAL AND zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_false.
+      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = 'No physical inventory document created'
+                                                        CHANGING  ct_bapiret = et_bapiret ).
+    ENDIF.
     zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
                                                 CHANGING  ct_bapiret  = et_bapiret
                                                           cv_is_error = ev_is_error ).
@@ -114,7 +121,7 @@ CLASS zabaputil_cl_bus_mm_inventory IMPLEMENTATION.
 
   METHOD post_differences.
 
-    CLEAR: ev_mblnr, ev_is_error, et_bapiret.
+    CLEAR: ev_mblnr, ev_mjahr, ev_is_error, et_bapiret.
 
     TRY.
         CALL FUNCTION 'BAPI_MATPHYSINV_POSTDIFF'
@@ -131,6 +138,13 @@ CLASS zabaputil_cl_bus_mm_inventory IMPLEMENTATION.
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
+    IF ev_mblnr IS INITIAL AND zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_false.
+      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = 'No material document created'
+                                                        CHANGING  ct_bapiret = et_bapiret ).
+    ELSEIF ev_mblnr IS NOT INITIAL.
+      " a material document is numbered in the year of its posting date
+      ev_mjahr = COND #( WHEN iv_budat IS INITIAL THEN sy-datum(4) ELSE iv_budat(4) ).
+    ENDIF.
     zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
                                                 CHANGING  ct_bapiret  = et_bapiret
                                                           cv_is_error = ev_is_error ).

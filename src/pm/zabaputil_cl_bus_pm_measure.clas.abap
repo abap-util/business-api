@@ -53,6 +53,8 @@ CLASS zabaputil_cl_bus_pm_measure IMPLEMENTATION.
         lv_unit   = iv_unit.
         lv_text   = iv_text.
         lv_reader = iv_reader.
+        " a plain RAISE in the module would leave an older message in sy-msg
+        CLEAR: sy-msgid, sy-msgno.
         CALL FUNCTION 'MEASUREM_DOCUM_RFC_SINGLE_001'
           EXPORTING
             measurement_point    = iv_point
