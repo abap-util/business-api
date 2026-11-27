@@ -11,21 +11,33 @@ CLASS zabaputil_cl_bus_sd_delivery DEFINITION
 
     TYPES ty_t_lips TYPE STANDARD TABLE OF lips WITH DEFAULT KEY.
     TYPES ty_t_order_item TYPE STANDARD TABLE OF bapidlvreftosalesorder WITH DEFAULT KEY.
+    TYPES ty_t_vbeln TYPE STANDARD TABLE OF vbeln_vl WITH DEFAULT KEY.
 
-    "! Creates an outbound delivery for sales order items (BAPI_OUTB_DELIVERY_CREATE_SLS)
-    "! @parameter iv_ship_point | shipping point, initial: determined by the system
-    "! @parameter iv_due_date   | selection date, default today
-    "! @parameter it_item      | order items: REF_DOC, REF_ITEM, DLV_QTY, SALES_UNIT
+    "! Creates outbound deliveries for sales order items (BAPI_OUTB_DELIVERY_CREATE_SLS).
+    "! The BAPI splits the items into several deliveries where they differ in a split
+    "! criterion (shipping point, ship-to party, route, ...): ev_vbeln is the first,
+    "! et_vbeln has all of them, and iv_commit = abap_true commits all of them.
+    "! @parameter iv_ship_point     | shipping point, initial: determined by the system
+    "! @parameter iv_due_date       | selection date, default today
+    "! @parameter it_item           | order items: REF_DOC, REF_ITEM, DLV_QTY, SALES_UNIT
+    "! @parameter ev_vbeln          | the (first) delivery created
+    "! @parameter et_vbeln          | every delivery created - from the BAPI's DELIVERIES
+    "! @parameter er_created_items  | the BAPI's CREATED_ITEMS (a table typed at runtime):
+    "!                                which order item went into which delivery item -
+    "!                                an order item missing from it was not delivered.
+    "!                                Unbound where the system's BAPI has no such table
     CLASS-METHODS create_from_order
       IMPORTING
-        iv_ship_point TYPE vstel OPTIONAL
-        iv_due_date   TYPE ledat DEFAULT sy-datum
-        it_item       TYPE ty_t_order_item
-        iv_commit     TYPE abap_bool DEFAULT abap_false
+        iv_ship_point    TYPE vstel OPTIONAL
+        iv_due_date      TYPE ledat DEFAULT sy-datum
+        it_item          TYPE ty_t_order_item
+        iv_commit        TYPE abap_bool DEFAULT abap_false
       EXPORTING
-        ev_vbeln      TYPE vbeln_vl
-        ev_is_error   TYPE abap_bool
-        et_bapiret    TYPE bapirettab.
+        ev_vbeln         TYPE vbeln_vl
+        et_vbeln         TYPE ty_t_vbeln
+        er_created_items TYPE REF TO data
+        ev_is_error      TYPE abap_bool
+        et_bapiret       TYPE bapirettab.
 
     "! Reads header and items of a delivery
     CLASS-METHODS read
@@ -112,24 +124,96 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
 
   METHOD create_from_order.
 
-    DATA lt_item TYPE ty_t_order_item.
+    DATA lt_item       TYPE ty_t_order_item.
+    DATA lt_param      TYPE abap_func_parmbind_tab.
+    DATA ls_param      TYPE abap_func_parmbind.
+    DATA lr_deliveries TYPE REF TO data.
+    DATA lr_created    TYPE REF TO data.
+    DATA lv_ship_point TYPE vstel.
+    DATA lv_due_date   TYPE ledat.
+    DATA lv_vbeln      TYPE vbeln_vl.
+    FIELD-SYMBOLS <deliveries> TYPE STANDARD TABLE.
+    FIELD-SYMBOLS <row>        TYPE any.
+    FIELD-SYMBOLS <field>      TYPE any.
 
-    CLEAR: ev_vbeln, ev_is_error, et_bapiret.
+    CLEAR: ev_vbeln, et_vbeln, er_created_items, ev_is_error, et_bapiret.
 
     TRY.
         IF iv_commit = abap_true.
           zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'DELIVERY' ).
         ENDIF.
-        lt_item = it_item.
-        CALL FUNCTION 'BAPI_OUTB_DELIVERY_CREATE_SLS'
-          EXPORTING
-            ship_point        = iv_ship_point
-            due_date          = iv_due_date
-          IMPORTING
-            delivery          = ev_vbeln
-          TABLES
-            sales_order_items = lt_item
-            return            = et_bapiret.
+        lt_item       = it_item.
+        lv_ship_point = iv_ship_point.
+        lv_due_date   = iv_due_date.
+
+        ls_param-kind = abap_func_exporting.
+        ls_param-name = 'SHIP_POINT'.
+        GET REFERENCE OF lv_ship_point INTO ls_param-value.
+        INSERT ls_param INTO TABLE lt_param.
+        ls_param-name = 'DUE_DATE'.
+        GET REFERENCE OF lv_due_date INTO ls_param-value.
+        INSERT ls_param INTO TABLE lt_param.
+        ls_param-kind = abap_func_importing.
+        ls_param-name = 'DELIVERY'.
+        GET REFERENCE OF ev_vbeln INTO ls_param-value.
+        INSERT ls_param INTO TABLE lt_param.
+        ls_param-kind = abap_func_tables.
+        ls_param-name = 'SALES_ORDER_ITEMS'.
+        GET REFERENCE OF lt_item INTO ls_param-value.
+        INSERT ls_param INTO TABLE lt_param.
+        ls_param-name = 'RETURN'.
+        GET REFERENCE OF et_bapiret INTO ls_param-value.
+        INSERT ls_param INTO TABLE lt_param.
+
+        " DELIVERIES and CREATED_ITEMS list every delivery and item created.
+        " Neither they nor their row types are verified on a system: the
+        " tables are created by name, and a call the module refuses for them
+        " (a parameter or type it does not have - raised before it runs) is
+        " made again without them
+        TRY.
+            CREATE DATA lr_deliveries TYPE STANDARD TABLE OF ('BAPISHPDELIVNUMB').
+            CREATE DATA lr_created TYPE STANDARD TABLE OF ('BAPIDLVITEMCREATED').
+            ls_param-name  = 'DELIVERIES'.
+            ls_param-value = lr_deliveries.
+            INSERT ls_param INTO TABLE lt_param.
+            ls_param-name  = 'CREATED_ITEMS'.
+            ls_param-value = lr_created.
+            INSERT ls_param INTO TABLE lt_param.
+          CATCH cx_sy_create_data_error.
+            CLEAR: lr_deliveries, lr_created.
+        ENDTRY.
+
+        TRY.
+            CALL FUNCTION 'BAPI_OUTB_DELIVERY_CREATE_SLS'
+              PARAMETER-TABLE lt_param.
+          CATCH cx_sy_dyn_call_param_not_found cx_sy_dyn_call_illegal_type INTO DATA(lx_call).
+            IF lr_deliveries IS BOUND.
+              DELETE lt_param WHERE name = 'DELIVERIES' OR name = 'CREATED_ITEMS'.
+              CLEAR: lr_deliveries, lr_created.
+              CALL FUNCTION 'BAPI_OUTB_DELIVERY_CREATE_SLS'
+                PARAMETER-TABLE lt_param.
+            ELSE.
+              zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_call
+                                                                     CHANGING  ct_bapiret = et_bapiret ).
+            ENDIF.
+        ENDTRY.
+
+        IF ev_vbeln IS NOT INITIAL.
+          INSERT ev_vbeln INTO TABLE et_vbeln.
+        ENDIF.
+        IF lr_deliveries IS BOUND.
+          ASSIGN lr_deliveries->* TO <deliveries>.
+          LOOP AT <deliveries> ASSIGNING <row>.
+            ASSIGN COMPONENT 'DELIV_NUMB' OF STRUCTURE <row> TO <field>.
+            IF sy-subrc = 0 AND <field> IS NOT INITIAL.
+              lv_vbeln = <field>.
+              IF NOT line_exists( et_vbeln[ table_line = lv_vbeln ] ).
+                INSERT lv_vbeln INTO TABLE et_vbeln.
+              ENDIF.
+            ENDIF.
+          ENDLOOP.
+          er_created_items = lr_created.
+        ENDIF.
       CATCH cx_root INTO DATA(lx_error).
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
