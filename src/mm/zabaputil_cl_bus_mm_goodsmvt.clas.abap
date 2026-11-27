@@ -104,7 +104,9 @@ CLASS zabaputil_cl_bus_mm_goodsmvt DEFINITION
         ev_is_error TYPE abap_bool
         et_bapiret  TYPE bapirettab.
 
-    "! Goods issue for a reservation item (movement type of the reservation)
+    "! Goods issue for a reservation item, with the movement type of the reservation.
+    "! A transfer reservation (movement type 3xx) is posted as transfer posting (GM code 04)
+    "! to the receiving plant and storage location of the reservation, any other with GM code 03.
     CLASS-METHODS goods_issue_reservation
       IMPORTING
         iv_rsnum    TYPE rsnum
@@ -318,6 +320,7 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
     DATA lt_item  TYPE ty_t_item.
     DATA lv_lgort TYPE lgort_d.
     DATA lv_charg TYPE charg_d.
+    DATA lv_code  TYPE bapi2017_gm_code-gm_code.
 
     DATA ls_resb TYPE resb.
 
@@ -351,9 +354,18 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
     ls_item-reserv_no = iv_rsnum.
     ls_item-res_item  = iv_rspos.
 
+    " GM code 03 does not allow transfer movement types
+    IF ls_resb-bwart(1) = '3'.
+      lv_code = cs_code-transfer_posting.
+      ls_item-move_plant = ls_resb-umwrk.
+      ls_item-move_stloc = ls_resb-umlgo.
+    ELSE.
+      lv_code = cs_code-goods_issue.
+    ENDIF.
+
     INSERT ls_item INTO TABLE lt_item.
 
-    create( EXPORTING iv_code     = cs_code-goods_issue
+    create( EXPORTING iv_code     = lv_code
                       it_item     = lt_item
                       iv_commit   = iv_commit
             IMPORTING ev_mblnr    = ev_mblnr
