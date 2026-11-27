@@ -165,6 +165,18 @@ CLASS zabaputil_cl_bus_mm_goodsmvt DEFINITION
       RETURNING
         VALUE(rs_result) TYPE bapi2017_gm_item_create.
 
+    "! posts one item with create( )
+    CLASS-METHODS post_single
+      IMPORTING
+        iv_code     TYPE clike
+        is_item     TYPE bapi2017_gm_item_create
+        iv_commit   TYPE abap_bool
+      EXPORTING
+        ev_mblnr    TYPE mblnr
+        ev_mjahr    TYPE mjahr
+        ev_is_error TYPE abap_bool
+        et_bapiret  TYPE bapirettab.
+
 ENDCLASS.
 
 
@@ -213,7 +225,6 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
   METHOD transfer_storage_location.
 
     DATA ls_item TYPE bapi2017_gm_item_create.
-    DATA lt_item TYPE ty_t_item.
 
     ls_item = item( iv_bwart = '311'
                     iv_matnr = iv_matnr
@@ -224,22 +235,19 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
                     iv_meins = iv_meins ).
     ls_item-move_stloc = iv_lgort_to.
 
-    INSERT ls_item INTO TABLE lt_item.
-
-    create( EXPORTING iv_code     = cs_code-transfer_posting
-                      it_item     = lt_item
-                      iv_commit   = iv_commit
-            IMPORTING ev_mblnr    = ev_mblnr
-                      ev_mjahr    = ev_mjahr
-                      ev_is_error = ev_is_error
-                      et_bapiret  = et_bapiret ).
+    post_single( EXPORTING iv_code     = cs_code-transfer_posting
+                           is_item     = ls_item
+                           iv_commit   = iv_commit
+                 IMPORTING ev_mblnr    = ev_mblnr
+                           ev_mjahr    = ev_mjahr
+                           ev_is_error = ev_is_error
+                           et_bapiret  = et_bapiret ).
 
   ENDMETHOD.
 
   METHOD transfer_plant.
 
     DATA ls_item TYPE bapi2017_gm_item_create.
-    DATA lt_item TYPE ty_t_item.
 
     ls_item = item( iv_bwart = '301'
                     iv_matnr = iv_matnr
@@ -252,22 +260,19 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
     ls_item-move_stloc = iv_lgort_to.
     ls_item-move_batch = iv_charg.
 
-    INSERT ls_item INTO TABLE lt_item.
-
-    create( EXPORTING iv_code     = cs_code-transfer_posting
-                      it_item     = lt_item
-                      iv_commit   = iv_commit
-            IMPORTING ev_mblnr    = ev_mblnr
-                      ev_mjahr    = ev_mjahr
-                      ev_is_error = ev_is_error
-                      et_bapiret  = et_bapiret ).
+    post_single( EXPORTING iv_code     = cs_code-transfer_posting
+                           is_item     = ls_item
+                           iv_commit   = iv_commit
+                 IMPORTING ev_mblnr    = ev_mblnr
+                           ev_mjahr    = ev_mjahr
+                           ev_is_error = ev_is_error
+                           et_bapiret  = et_bapiret ).
 
   ENDMETHOD.
 
   METHOD transfer_stock_type.
 
     DATA ls_item TYPE bapi2017_gm_item_create.
-    DATA lt_item TYPE ty_t_item.
 
     ls_item = item( iv_bwart = iv_bwart
                     iv_matnr = iv_matnr
@@ -276,22 +281,20 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
                     iv_charg = iv_charg
                     iv_menge = iv_menge
                     iv_meins = iv_meins ).
-    INSERT ls_item INTO TABLE lt_item.
 
-    create( EXPORTING iv_code     = cs_code-transfer_posting
-                      it_item     = lt_item
-                      iv_commit   = iv_commit
-            IMPORTING ev_mblnr    = ev_mblnr
-                      ev_mjahr    = ev_mjahr
-                      ev_is_error = ev_is_error
-                      et_bapiret  = et_bapiret ).
+    post_single( EXPORTING iv_code     = cs_code-transfer_posting
+                           is_item     = ls_item
+                           iv_commit   = iv_commit
+                 IMPORTING ev_mblnr    = ev_mblnr
+                           ev_mjahr    = ev_mjahr
+                           ev_is_error = ev_is_error
+                           et_bapiret  = et_bapiret ).
 
   ENDMETHOD.
 
   METHOD goods_issue_order.
 
     DATA ls_item TYPE bapi2017_gm_item_create.
-    DATA lt_item TYPE ty_t_item.
 
     ls_item = item( iv_bwart = '261'
                     iv_matnr = iv_matnr
@@ -302,22 +305,19 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
                     iv_meins = iv_meins ).
     ls_item-orderid = iv_aufnr.
 
-    INSERT ls_item INTO TABLE lt_item.
-
-    create( EXPORTING iv_code     = cs_code-goods_issue
-                      it_item     = lt_item
-                      iv_commit   = iv_commit
-            IMPORTING ev_mblnr    = ev_mblnr
-                      ev_mjahr    = ev_mjahr
-                      ev_is_error = ev_is_error
-                      et_bapiret  = et_bapiret ).
+    post_single( EXPORTING iv_code     = cs_code-goods_issue
+                           is_item     = ls_item
+                           iv_commit   = iv_commit
+                 IMPORTING ev_mblnr    = ev_mblnr
+                           ev_mjahr    = ev_mjahr
+                           ev_is_error = ev_is_error
+                           et_bapiret  = et_bapiret ).
 
   ENDMETHOD.
 
   METHOD goods_issue_reservation.
 
     DATA ls_item  TYPE bapi2017_gm_item_create.
-    DATA lt_item  TYPE ty_t_item.
     DATA lv_lgort TYPE lgort_d.
     DATA lv_charg TYPE charg_d.
     DATA lv_code  TYPE bapi2017_gm_code-gm_code.
@@ -363,22 +363,19 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
       lv_code = cs_code-goods_issue.
     ENDIF.
 
-    INSERT ls_item INTO TABLE lt_item.
-
-    create( EXPORTING iv_code     = lv_code
-                      it_item     = lt_item
-                      iv_commit   = iv_commit
-            IMPORTING ev_mblnr    = ev_mblnr
-                      ev_mjahr    = ev_mjahr
-                      ev_is_error = ev_is_error
-                      et_bapiret  = et_bapiret ).
+    post_single( EXPORTING iv_code     = lv_code
+                           is_item     = ls_item
+                           iv_commit   = iv_commit
+                 IMPORTING ev_mblnr    = ev_mblnr
+                           ev_mjahr    = ev_mjahr
+                           ev_is_error = ev_is_error
+                           et_bapiret  = et_bapiret ).
 
   ENDMETHOD.
 
   METHOD goods_receipt_initial.
 
     DATA ls_item TYPE bapi2017_gm_item_create.
-    DATA lt_item TYPE ty_t_item.
 
     ls_item = item( iv_bwart = '561'
                     iv_matnr = iv_matnr
@@ -387,15 +384,14 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
                     iv_charg = iv_charg
                     iv_menge = iv_menge
                     iv_meins = iv_meins ).
-    INSERT ls_item INTO TABLE lt_item.
 
-    create( EXPORTING iv_code     = cs_code-other_receipts
-                      it_item     = lt_item
-                      iv_commit   = iv_commit
-            IMPORTING ev_mblnr    = ev_mblnr
-                      ev_mjahr    = ev_mjahr
-                      ev_is_error = ev_is_error
-                      et_bapiret  = et_bapiret ).
+    post_single( EXPORTING iv_code     = cs_code-other_receipts
+                           is_item     = ls_item
+                           iv_commit   = iv_commit
+                 IMPORTING ev_mblnr    = ev_mblnr
+                           ev_mjahr    = ev_mjahr
+                           ev_is_error = ev_is_error
+                           et_bapiret  = et_bapiret ).
 
   ENDMETHOD.
 
@@ -425,6 +421,22 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
     zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
                                                 CHANGING  ct_bapiret  = et_bapiret
                                                           cv_is_error = ev_is_error ).
+
+  ENDMETHOD.
+
+  METHOD post_single.
+
+    DATA lt_item TYPE ty_t_item.
+
+    INSERT is_item INTO TABLE lt_item.
+
+    create( EXPORTING iv_code     = iv_code
+                      it_item     = lt_item
+                      iv_commit   = iv_commit
+            IMPORTING ev_mblnr    = ev_mblnr
+                      ev_mjahr    = ev_mjahr
+                      ev_is_error = ev_is_error
+                      et_bapiret  = et_bapiret ).
 
   ENDMETHOD.
 
