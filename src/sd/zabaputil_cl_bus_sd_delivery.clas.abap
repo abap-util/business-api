@@ -50,6 +50,10 @@ CLASS zabaputil_cl_bus_sd_delivery DEFINITION
         et_bapiret  TYPE bapirettab.
 
     "! Changes the delivery quantity of an item (BAPI_OUTB_DELIVERY_CHANGE)
+    "! @parameter iv_lfimg | the new quantity, in the sales unit of the item (LIPS-VRKME)
+    "! @parameter iv_vrkme | the unit of iv_lfimg; a unit other than the sales unit of the
+    "!                       item is an error, as the quantity is not converted - the base
+    "!                       quantity is computed with the item's own conversion factors
     CLASS-METHODS change_quantity
       IMPORTING
         iv_vbeln    TYPE vbeln_vl
@@ -258,6 +262,12 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
         SELECT SINGLE * FROM lips INTO @ls_lips WHERE vbeln = @iv_vbeln AND posnr = @iv_posnr.
         IF sy-subrc <> 0.
           zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Delivery item { iv_vbeln ALPHA = OUT }/{ iv_posnr ALPHA = OUT } not found|
+                                                            CHANGING  ct_bapiret = et_bapiret ).
+        ELSEIF iv_vrkme IS NOT INITIAL AND iv_vrkme <> ls_lips-vrkme.
+          " UMVKZ/UMVKN convert the item's sales unit to the base unit - a
+          " quantity in another unit would be posted wrong by the ratio of the
+          " two units
+          zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Unit { iv_vrkme } is not the sales unit { ls_lips-vrkme } of delivery item { iv_posnr ALPHA = OUT }|
                                                             CHANGING  ct_bapiret = et_bapiret ).
         ELSE.
           lt_item_data = VALUE #( ( deliv_numb      = iv_vbeln
