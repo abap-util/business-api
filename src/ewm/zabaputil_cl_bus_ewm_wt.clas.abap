@@ -2,6 +2,9 @@
 "! class activates in systems without EWM and fails only when it is called there.
 "! Every /SCWM/TO_* module is called with IV_COMMIT_WORK = abap_false and its own
 "! default for IV_UPDATE_TASK, so all of them post the same way; the commit is iv_commit's.
+"! The warehouse number is set in the EWM transaction manager (/SCWM/CL_TM) before
+"! each call, and with iv_commit = abap_true the manager's buffers are cleaned up
+"! after the commit or rollback.
 CLASS zabaputil_cl_bus_ewm_wt DEFINITION
   PUBLIC
   FINAL
@@ -142,6 +145,24 @@ CLASS zabaputil_cl_bus_ewm_wt DEFINITION
       CHANGING
         ct_bapiret    TYPE bapirettab.
 
+    "! bapi_finish( ) - and with iv_commit, once it has committed or rolled back,
+    "! the cleanup of the EWM transaction manager (/SCWM/CL_TM=>CLEANUP), so its
+    "! buffers of this posting do not reach the next call in the session. Without
+    "! iv_commit the caller's LUW is still open: its buffers stay
+    CLASS-METHODS finish
+      IMPORTING
+        iv_commit   TYPE abap_bool
+      CHANGING
+        et_bapiret  TYPE bapirettab
+        ev_is_error TYPE abap_bool.
+
+    "! The warehouse number in the EWM transaction manager (/SCWM/CL_TM=>SET_LGNUM),
+    "! as the /SCWM/TO_* modules expect it. Where the call fails, the module is
+    "! called all the same, as before
+    CLASS-METHODS tm_set_lgnum
+      IMPORTING
+        ir_lgnum TYPE REF TO data.
+
     "! the warehouse number in a data object of type /SCWM/LGNUM, for a dynamic call
     CLASS-METHODS lgnum_ref
       IMPORTING
@@ -192,6 +213,7 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
         " a field the structure does not have is an error: no task without it
         IF zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_false.
           lr_lgnum = lgnum_ref( iv_lgnum ).
+          tm_set_lgnum( lr_lgnum ).
           CREATE DATA lr_tanum TYPE ('/SCWM/TANUM').
 
           zabaputil_cl_bus_util_context=>bapi_call_function(
@@ -211,9 +233,9 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
-    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
-                                                CHANGING  ct_bapiret  = et_bapiret
-                                                          cv_is_error = ev_is_error ).
+    finish( EXPORTING iv_commit   = iv_commit
+            CHANGING  et_bapiret  = et_bapiret
+                      ev_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -229,9 +251,9 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
                     IMPORTING ev_tanum      = ev_tanum
                     CHANGING  ct_bapiret    = et_bapiret ).
 
-    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
-                                                CHANGING  ct_bapiret  = et_bapiret
-                                                          cv_is_error = ev_is_error ).
+    finish( EXPORTING iv_commit   = iv_commit
+            CHANGING  et_bapiret  = et_bapiret
+                      ev_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -283,9 +305,9 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
       ENDTRY.
     ENDIF.
 
-    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
-                                                CHANGING  ct_bapiret  = et_bapiret
-                                                          cv_is_error = ev_is_error ).
+    finish( EXPORTING iv_commit   = iv_commit
+            CHANGING  et_bapiret  = et_bapiret
+                      ev_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -299,9 +321,9 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
                               it_rows       = it_change
                     CHANGING  ct_bapiret    = et_bapiret ).
 
-    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
-                                                CHANGING  ct_bapiret  = et_bapiret
-                                                          cv_is_error = ev_is_error ).
+    finish( EXPORTING iv_commit   = iv_commit
+            CHANGING  et_bapiret  = et_bapiret
+                      ev_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -358,9 +380,9 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
                                     iv_tanum      = iv_tanum
                           CHANGING  ct_bapiret    = et_bapiret ).
 
-    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
-                                                CHANGING  ct_bapiret  = et_bapiret
-                                                          cv_is_error = ev_is_error ).
+    finish( EXPORTING iv_commit   = iv_commit
+            CHANGING  et_bapiret  = et_bapiret
+                      ev_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -375,9 +397,9 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
                                     iv_tanum      = iv_tanum
                           CHANGING  ct_bapiret    = et_bapiret ).
 
-    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
-                                                CHANGING  ct_bapiret  = et_bapiret
-                                                          cv_is_error = ev_is_error ).
+    finish( EXPORTING iv_commit   = iv_commit
+            CHANGING  et_bapiret  = et_bapiret
+                      ev_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -409,6 +431,7 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
 
         IF zabaputil_cl_bus_util_context=>bapi_check_is_error( ct_bapiret ) = abap_false.
           lr_lgnum = lgnum_ref( iv_lgnum ).
+          tm_set_lgnum( lr_lgnum ).
 
           zabaputil_cl_bus_util_context=>bapi_call_function(
                               EXPORTING iv_name    = iv_function
@@ -441,6 +464,7 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
 
     TRY.
         lr_lgnum = lgnum_ref( iv_lgnum ).
+        tm_set_lgnum( lr_lgnum ).
         GET REFERENCE OF it_rows INTO lr_rows.
 
         ls_param-kind  = abap_func_exporting.
@@ -478,6 +502,40 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
       CATCH cx_root INTO DATA(lx_error).
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = ct_bapiret ).
+    ENDTRY.
+
+  ENDMETHOD.
+
+  METHOD finish.
+
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
+
+    IF iv_commit = abap_true.
+      TRY.
+          CALL METHOD ('/SCWM/CL_TM')=>('CLEANUP').
+        CATCH cx_root ##NO_HANDLER.
+          " no transaction manager to clean up - nothing was buffered there
+      ENDTRY.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD tm_set_lgnum.
+
+    FIELD-SYMBOLS <lgnum> TYPE any.
+
+    TRY.
+        ASSIGN ir_lgnum->* TO <lgnum>.
+        IF <lgnum> IS NOT ASSIGNED.
+          RETURN.
+        ENDIF.
+        CALL METHOD ('/SCWM/CL_TM')=>('SET_LGNUM')
+          EXPORTING
+            iv_lgnum = <lgnum>.
+      CATCH cx_root ##NO_HANDLER.
+        " the module is called all the same, as before this call was made
     ENDTRY.
 
   ENDMETHOD.

@@ -8,7 +8,8 @@ CLASS zabaputil_cl_bus_ewm_hu DEFINITION
   PUBLIC SECTION.
 
     "! Creates a handling unit with the packing class (/SCWM/CL_WM_PACKING) and
-    "! saves it. The warehouse number is set in the transaction manager (/SCWM/CL_TM).
+    "! saves it. The warehouse number is set in the transaction manager (/SCWM/CL_TM),
+    "! and with iv_commit = abap_true its buffers are cleaned up after the commit or rollback.
     "! @parameter iv_pmat    | packaging material, a product number
     "! @parameter iv_huident | handling unit number; initial: the number range of the packaging material
     "! @parameter iv_lgpla   | storage bin the handling unit is created on
@@ -50,6 +51,18 @@ CLASS zabaputil_cl_bus_ewm_hu DEFINITION
 
   PROTECTED SECTION.
   PRIVATE SECTION.
+
+    "! bapi_finish( ) - and with iv_commit, once it has committed or rolled back,
+    "! the cleanup of the EWM transaction manager (/SCWM/CL_TM=>CLEANUP), so its
+    "! buffers of this posting do not reach the next call in the session. Without
+    "! iv_commit the caller's LUW is still open: its buffers stay
+    CLASS-METHODS finish
+      IMPORTING
+        iv_commit   TYPE abap_bool
+      CHANGING
+        et_bapiret  TYPE bapirettab
+        ev_is_error TYPE abap_bool.
+
 ENDCLASS.
 
 
@@ -145,9 +158,9 @@ CLASS zabaputil_cl_bus_ewm_hu IMPLEMENTATION.
       CLEAR: ev_huident, er_header.
     ENDIF.
 
-    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
-                                                CHANGING  ct_bapiret  = et_bapiret
-                                                          cv_is_error = ev_is_error ).
+    finish( EXPORTING iv_commit   = iv_commit
+            CHANGING  et_bapiret  = et_bapiret
+                      ev_is_error = ev_is_error ).
 
   ENDMETHOD.
 
@@ -208,6 +221,22 @@ CLASS zabaputil_cl_bus_ewm_hu IMPLEMENTATION.
 
     zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
                                                          cv_is_error = ev_is_error ).
+
+  ENDMETHOD.
+
+  METHOD finish.
+
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
+
+    IF iv_commit = abap_true.
+      TRY.
+          CALL METHOD ('/SCWM/CL_TM')=>('CLEANUP').
+        CATCH cx_root ##NO_HANDLER.
+          " no transaction manager to clean up - nothing was buffered there
+      ENDTRY.
+    ENDIF.
 
   ENDMETHOD.
 

@@ -8,7 +8,9 @@ CLASS zabaputil_cl_bus_ewm_bin DEFINITION
   PUBLIC SECTION.
 
     "! Creates, changes or deletes storage bins (/SCWM/LAGP_MAINTAIN) and saves
-    "! them (/SCWM/TO_POST). The bins are not locked by the module call.
+    "! them (/SCWM/TO_POST). The bins are not locked by the module call. With
+    "! iv_commit = abap_true the buffers of the transaction manager (/SCWM/CL_TM)
+    "! are cleaned up after the commit or rollback.
     "! @parameter it_bins     | rows of /SCWM/TT_LAGP_MAINTAIN
     "! @parameter iv_action   | action, a constant WMEGC_BIN_* of the type group WMEGC
     "! @parameter iv_complete | abap_true: all bins or none, abap_false: every bin without an error
@@ -25,6 +27,18 @@ CLASS zabaputil_cl_bus_ewm_bin DEFINITION
 
   PROTECTED SECTION.
   PRIVATE SECTION.
+
+    "! bapi_finish( ) - and with iv_commit, once it has committed or rolled back,
+    "! the cleanup of the EWM transaction manager (/SCWM/CL_TM=>CLEANUP), so its
+    "! buffers of this posting do not reach the next call in the session. Without
+    "! iv_commit the caller's LUW is still open: its buffers stay
+    CLASS-METHODS finish
+      IMPORTING
+        iv_commit   TYPE abap_bool
+      CHANGING
+        et_bapiret  TYPE bapirettab
+        ev_is_error TYPE abap_bool.
+
 ENDCLASS.
 
 
@@ -76,9 +90,25 @@ CLASS zabaputil_cl_bus_ewm_bin IMPLEMENTATION.
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
 
+    finish( EXPORTING iv_commit   = iv_commit
+            CHANGING  et_bapiret  = et_bapiret
+                      ev_is_error = ev_is_error ).
+
+  ENDMETHOD.
+
+  METHOD finish.
+
     zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
                                                 CHANGING  ct_bapiret  = et_bapiret
                                                           cv_is_error = ev_is_error ).
+
+    IF iv_commit = abap_true.
+      TRY.
+          CALL METHOD ('/SCWM/CL_TM')=>('CLEANUP').
+        CATCH cx_root ##NO_HANDLER.
+          " no transaction manager to clean up - nothing was buffered there
+      ENDTRY.
+    ENDIF.
 
   ENDMETHOD.
 
