@@ -55,7 +55,8 @@ CLASS zabaputil_cl_bus_sd_order DEFINITION
         ev_is_error  TYPE abap_bool
         et_bapiret   TYPE bapirettab.
 
-    "! Changes the quantity of an order item (first schedule line)
+    "! Changes the quantity of an order item: the quantity of its first schedule line
+    "! (the lowest schedule line number); further schedule lines keep their quantity
     CLASS-METHODS change_quantity
       IMPORTING
         iv_vbeln    TYPE vbeln_va
@@ -190,6 +191,7 @@ CLASS zabaputil_cl_bus_sd_order IMPLEMENTATION.
 
   METHOD change_quantity.
 
+    DATA lt_etenr     TYPE STANDARD TABLE OF etenr WITH DEFAULT KEY.
     DATA lv_etenr     TYPE etenr.
     DATA ls_item      TYPE bapisditm.
     DATA ls_itemx     TYPE bapisditmx.
@@ -202,8 +204,12 @@ CLASS zabaputil_cl_bus_sd_order IMPLEMENTATION.
 
     CLEAR: ev_is_error, et_bapiret.
 
-    SELECT SINGLE etenr FROM vbep INTO @lv_etenr
-      WHERE vbeln = @iv_vbeln AND posnr = @iv_posnr ##WARN_OK.
+    SELECT etenr FROM vbep
+      WHERE vbeln = @iv_vbeln AND posnr = @iv_posnr
+      ORDER BY etenr
+      INTO TABLE @lt_etenr
+      UP TO 1 ROWS.
+    READ TABLE lt_etenr INTO lv_etenr INDEX 1.
     IF sy-subrc <> 0.
       lv_etenr = '0001'.
     ENDIF.
