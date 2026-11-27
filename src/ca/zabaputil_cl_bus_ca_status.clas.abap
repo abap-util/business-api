@@ -27,7 +27,8 @@ CLASS zabaputil_cl_bus_ca_status DEFINITION
       RETURNING
         VALUE(rv_result) TYPE abap_bool.
 
-    "! Sets or resets a user status (STATUS_CHANGE_EXTERN)
+    "! Sets or resets a user status (STATUS_CHANGE_EXTERN) and registers the
+    "! update of the status buffer for the next commit (STATUS_UPDATE_ON_COMMIT)
     "! @parameter iv_inactive | abap_true: reset the status
     CLASS-METHODS set_user_status
       IMPORTING
@@ -120,6 +121,16 @@ CLASS zabaputil_cl_bus_ca_status IMPLEMENTATION.
         IF sy-subrc <> 0.
           zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'STATUS_CHANGE_EXTERN'
                                                           CHANGING  ct_bapiret = et_bapiret ).
+        ELSE.
+          " the change only sits in the status buffer - this writes it with the commit
+          CALL FUNCTION 'STATUS_UPDATE_ON_COMMIT'
+            EXCEPTIONS
+              error_message = 98
+              OTHERS        = 99.
+          IF sy-subrc <> 0.
+            zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'STATUS_UPDATE_ON_COMMIT'
+                                                            CHANGING  ct_bapiret = et_bapiret ).
+          ENDIF.
         ENDIF.
       CATCH cx_root INTO DATA(lx_error).
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error

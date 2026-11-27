@@ -5,7 +5,8 @@ CLASS zabaputil_cl_bus_mm_preq DEFINITION
 
   PUBLIC SECTION.
 
-    "! Releases a purchase requisition item with a release code (BAPI_REQUISITION_RELEASE)
+    "! Releases a purchase requisition item with a release code (BAPI_REQUISITION_RELEASE).
+    "! The BAPI is called with NO_COMMIT_WORK, so iv_commit decides on the commit.
     CLASS-METHODS release
       IMPORTING
         iv_banfn          TYPE banfn
@@ -17,7 +18,8 @@ CLASS zabaputil_cl_bus_mm_preq DEFINITION
         ev_is_error       TYPE abap_bool
         et_bapiret        TYPE bapirettab.
 
-    "! Resets the release of a purchase requisition item (BAPI_REQUISITION_RESET_RELEASE)
+    "! Resets the release of a purchase requisition item (BAPI_REQUISITION_RESET_RELEASE).
+    "! The BAPI is called with NO_COMMIT_WORK, so iv_commit decides on the commit.
     CLASS-METHODS reset_release
       IMPORTING
         iv_banfn          TYPE banfn
@@ -47,6 +49,7 @@ CLASS zabaputil_cl_bus_mm_preq IMPLEMENTATION.
             number                 = iv_banfn
             rel_code               = iv_rel_code
             item                   = iv_bnfpo
+            no_commit_work         = abap_true
           IMPORTING
             rel_status_new         = ev_rel_status_new
           TABLES
@@ -79,6 +82,7 @@ CLASS zabaputil_cl_bus_mm_preq IMPLEMENTATION.
             number                   = iv_banfn
             rel_code                 = iv_rel_code
             item                     = iv_bnfpo
+            no_commit_work           = abap_true
           IMPORTING
             rel_status_new           = ev_rel_status_new
           TABLES

@@ -70,7 +70,8 @@ CLASS zabaputil_cl_bus_ewm_hu IMPLEMENTATION.
     CLEAR: ev_huident, er_header, ev_is_error, et_bapiret.
 
     lv_lgnum   = iv_lgnum.
-    lv_huident = iv_huident.
+    lv_huident = zabaputil_cl_bus_util_context=>conv_alpha_in( iv_value  = iv_huident
+                                                               iv_length = 20 ).
     lv_lgpla   = iv_lgpla.
 
     zabaputil_cl_bus_ewm_stock=>read_product_id( EXPORTING iv_matnr   = iv_pmat
