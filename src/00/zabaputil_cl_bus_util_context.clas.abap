@@ -1444,14 +1444,17 @@ CLASS zabaputil_cl_bus_util_context IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD c_pad_left.
-
     result = val.
+    DATA(lv_missing) = len - strlen( result ).
+    IF lv_missing <= 0.
+      RETURN.
+    ENDIF.
     " pad is TYPE c - space value would be trimmed by && (same as c_pad_right fix)
     DATA(lv_pad) = COND string( WHEN pad IS INITIAL THEN ` ` ELSE CONV #( pad ) ).
-    WHILE strlen( result ) < len.
-      result = lv_pad && result.
-    ENDWHILE.
-
+    " exactly the missing characters, also for a pad of several characters
+    result = substring( val = repeat( val = lv_pad
+                                      occ = lv_missing )
+                        len = lv_missing ) && result.
   ENDMETHOD.
 
   METHOD uuid_get_c32.
