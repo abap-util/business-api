@@ -107,11 +107,15 @@ CLASS zabaputil_cl_bus_mm_goodsmvt DEFINITION
     "! Goods issue for a reservation item, with the movement type of the reservation.
     "! A transfer reservation (movement type 3xx) is posted as transfer posting (GM code 04)
     "! to the receiving plant and storage location of the reservation, any other with GM code 03.
+    "! @parameter iv_menge | the quantity, in iv_meins
+    "! @parameter iv_meins | the unit of iv_menge; initial: the unit of entry of the
+    "!                       reservation (RESB-ERFME), not necessarily the base unit
     CLASS-METHODS goods_issue_reservation
       IMPORTING
         iv_rsnum    TYPE rsnum
         iv_rspos    TYPE rspos
         iv_menge    TYPE erfmg
+        iv_meins    TYPE erfme OPTIONAL
         iv_lgort    TYPE lgort_d OPTIONAL
         iv_charg    TYPE charg_d OPTIONAL
         iv_commit   TYPE abap_bool DEFAULT abap_false
@@ -325,6 +329,7 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
     DATA lv_lgort TYPE lgort_d.
     DATA lv_charg TYPE charg_d.
     DATA lv_code  TYPE bapi2017_gm_code-gm_code.
+    DATA lv_meins TYPE erfme.
 
     DATA ls_resb TYPE resb.
 
@@ -347,6 +352,10 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
     IF lv_charg IS INITIAL.
       lv_charg = ls_resb-charg.
     ENDIF.
+    lv_meins = iv_meins.
+    IF lv_meins IS INITIAL.
+      lv_meins = ls_resb-erfme.
+    ENDIF.
 
     ls_item = item( iv_bwart = ls_resb-bwart
                     iv_matnr = ls_resb-matnr
@@ -354,7 +363,7 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
                     iv_lgort = lv_lgort
                     iv_charg = lv_charg
                     iv_menge = iv_menge
-                    iv_meins = ls_resb-erfme ).
+                    iv_meins = lv_meins ).
     ls_item-reserv_no = iv_rsnum.
     ls_item-res_item  = iv_rspos.
 
