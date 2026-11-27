@@ -1,0 +1,70 @@
+name: test
+
+# contract: the method contract of AGENTS.md, read from the source of every
+#           business class (.github/scripts/check-contract.mjs)
+# unit:     the unit tests of package 00, transpiled to JavaScript
+# sync:     the abap-util copies in package 00 against their masters, at the
+#           commit .github/abap-util.json names - a copy that was changed here
+#           fails until the change is synced back or recorded in the manifest.
+#           The comparison with abap-util's main is a report, it never fails.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: '22'
+    - run: npm run contract
+
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: '22'
+    - run: npm ci
+    - run: npm run transpile
+    - run: npm run unit
+
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: '22'
+    - name: Check out abap-util at the commit of the manifest
+      run: |
+        commit=$(node -p "require('./.github/abap-util.json').commit")
+        git init -q "$RUNNER_TEMP/abap-util"
+        cd "$RUNNER_TEMP/abap-util"
+        git remote add origin https://github.com/abap-util/abap-util
+        git fetch -q --depth 1 origin "$commit" main
+        git checkout -q "$commit"
+    - name: Copies against the masters they were taken from
+      run: node "$RUNNER_TEMP/abap-util/.github/scripts/sync-check.mjs" --consumer .
+    - name: Report - copies against abap-util main
+      run: |
+        cd "$RUNNER_TEMP/abap-util"
+        git checkout -q origin/main
+        if [ -f .github/scripts/sync-check.mjs ]; then
+          node .github/scripts/sync-check.mjs --consumer "$GITHUB_WORKSPACE" --report
+        fi
