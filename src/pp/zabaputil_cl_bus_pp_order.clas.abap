@@ -31,7 +31,12 @@ CLASS zabaputil_cl_bus_pp_order DEFINITION
         ev_is_error TYPE abap_bool
         et_bapiret  TYPE bapirettab.
 
-    "! Checks the material availability of a production order (BAPI_PRODORD_CHECK_MAT_AVAIL)
+    "! Checks the material availability of a production order (BAPI_PRODORD_CHECK_MAT_AVAIL).
+    "! The outcome comes back as messages only: missing parts are typically a warning or an
+    "! information in et_bapiret, which ev_is_error does not flag - ev_is_error says the check
+    "! failed, not that material is missing. Once committed, the result is in the order's
+    "! system status (MSPT missing parts, MACM material committed), which
+    "! zabaputil_cl_bus_ca_status reads.
     CLASS-METHODS check_availability
       IMPORTING
         iv_aufnr    TYPE aufnr
