@@ -133,6 +133,10 @@ CLASS zabaputil_cl_bus_ewm_hu IMPLEMENTATION.
       ENDTRY.
     ENDIF.
 
+    IF ev_huident IS INITIAL AND zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_false.
+      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = 'No handling unit created'
+                                                        CHANGING  ct_bapiret = et_bapiret ).
+    ENDIF.
     IF zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_true.
       CLEAR: ev_huident, er_header.
     ENDIF.
