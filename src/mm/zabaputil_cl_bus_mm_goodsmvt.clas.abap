@@ -242,6 +242,9 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
                     iv_menge = iv_menge
                     iv_meins = iv_meins ).
     ls_item-move_stloc = iv_lgort_to.
+    " the receiving batch, as in transfer_plant( ): a storage location
+    " transfer keeps the batch
+    ls_item-move_batch = iv_charg.
 
     post_single( EXPORTING iv_code     = cs_code-transfer_posting
                            is_item     = ls_item
@@ -332,6 +335,7 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
     DATA lv_meins TYPE erfme.
 
     DATA ls_resb TYPE resb.
+    FIELD-SYMBOLS <umcha> TYPE any.
 
     CLEAR: ev_mblnr, ev_mjahr, ev_is_error, et_bapiret.
 
@@ -372,6 +376,13 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
       lv_code = cs_code-transfer_posting.
       ls_item-move_plant = ls_resb-umwrk.
       ls_item-move_stloc = ls_resb-umlgo.
+      " the receiving batch where the reservation names one - by name, as
+      " the field is not verified on every release; otherwise the BAPI
+      " derives it, as before
+      ASSIGN COMPONENT 'UMCHA' OF STRUCTURE ls_resb TO <umcha>.
+      IF sy-subrc = 0 AND <umcha> IS NOT INITIAL.
+        ls_item-move_batch = <umcha>.
+      ENDIF.
     ELSE.
       lv_code = cs_code-goods_issue.
     ENDIF.
