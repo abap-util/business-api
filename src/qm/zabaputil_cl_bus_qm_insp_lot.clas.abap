@@ -80,12 +80,15 @@ CLASS zabaputil_cl_bus_qm_insp_lot IMPLEMENTATION.
 
             CREATE DATA lr_language TYPE (lv_language_type).
             ASSIGN lr_language->* TO <language>.
+            UNASSIGN <field>.
             IF cl_abap_typedescr=>describe_by_data( <language> )->kind = cl_abap_typedescr=>kind_struct.
               ASSIGN COMPONENT 'LANGUAGE' OF STRUCTURE <language> TO <field>.
             ELSE.
               ASSIGN <language> TO <field>.
             ENDIF.
-            <field> = sy-langu.
+            IF <field> IS ASSIGNED.
+              <field> = sy-langu.
+            ENDIF.
             CREATE DATA lr_return TYPE (lv_return_type).
 
             lt_param = VALUE #( ( name = 'NUMBER'   kind = abap_func_exporting value = REF #( lv_prueflos ) )
