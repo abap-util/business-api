@@ -1,5 +1,7 @@
 "! EWM warehouse tasks. All /SCWM/ objects are reached dynamically, so the
 "! class activates in systems without EWM and fails only when it is called there.
+"! Every /SCWM/TO_* module is called with IV_COMMIT_WORK = abap_false and its own
+"! default for IV_UPDATE_TASK, so all of them post the same way; the commit is iv_commit's.
 CLASS zabaputil_cl_bus_ewm_wt DEFINITION
   PUBLIC
   FINAL
@@ -445,10 +447,10 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
         ls_param-name  = 'IV_LGNUM'.
         ls_param-value = lr_lgnum.
         INSERT ls_param INTO TABLE lt_param.
-        ls_param-name = 'IV_UPDATE_TASK'.
-        GET REFERENCE OF lv_false INTO ls_param-value.
-        INSERT ls_param INTO TABLE lt_param.
+        " IV_UPDATE_TASK keeps its default, as in create_hu( ) and call_with_task_table( ),
+        " so every warehouse task call posts the same way in the caller's LUW
         ls_param-name = 'IV_COMMIT_WORK'.
+        GET REFERENCE OF lv_false INTO ls_param-value.
         INSERT ls_param INTO TABLE lt_param.
         ls_param-name  = to_upper( iv_table_name ).
         ls_param-value = lr_rows.
