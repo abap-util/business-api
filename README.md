@@ -44,6 +44,7 @@ zabaputil_cl_bus_mm_goodsmvt=>transfer_storage_location(
             et_bapiret    = DATA(lt_bapiret) ). " all messages as BAPIRET2
 ```
 * `iv_commit` defaults to `abap_false`: the caller owns the LUW, and several calls can be committed together.
+* The delivery, HU and transfer order methods reset the buffers of the delivery, HU and serial number modules (`bapi_refresh_buffers( )`) before they post - but only with `iv_commit = abap_true`, where each call is a LUW of its own. Without it the buffers hold what the earlier calls of your LUW posted (an HU just created, its packing), and a reset would drop it. When you commit yourself between such calls, call `zabaputil_cl_bus_util_context=>bapi_refresh_buffers( )` after your commit.
 * Read methods have no `iv_commit`.
 * Complex input stays a BAPI structure (`is_header TYPE bapisdhd1`); convenience methods with simple parameters cover the common cases.
 

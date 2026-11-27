@@ -1,3 +1,7 @@
+"! Transfer orders (LE-WM). create_from_delivery resets the delivery, HU and
+"! serial number buffers before it posts only with iv_commit = abap_true:
+"! with abap_false the caller owns the LUW, and the buffers hold what its
+"! earlier calls posted.
 CLASS zabaputil_cl_bus_wm_to DEFINITION
   PUBLIC
   FINAL
@@ -147,7 +151,9 @@ CLASS zabaputil_cl_bus_wm_to IMPLEMENTATION.
     CLEAR: ev_tanum, ev_is_error, et_bapiret.
 
     TRY.
-        zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'DELIVERY' ).
+        IF iv_commit = abap_true.
+          zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'DELIVERY' ).
+        ENDIF.
         CLEAR: sy-msgid, sy-msgno.
         CALL FUNCTION 'L_TO_CREATE_DN'
           EXPORTING

@@ -1,3 +1,7 @@
+"! Handling units. The write methods reset the HU buffers (HU_PACKING_REFRESH)
+"! before they post only with iv_commit = abap_true: with abap_false the
+"! caller owns the LUW, the buffers hold the HUs its earlier calls created or
+"! packed, and several calls - create, then pack - are committed together.
 CLASS zabaputil_cl_bus_sd_hu DEFINITION
   PUBLIC
   FINAL
@@ -121,7 +125,9 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
     CLEAR: ev_exidv, ev_is_error, et_bapiret.
 
     TRY.
-        zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'HU' ).
+        IF iv_commit = abap_true.
+          zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'HU' ).
+        ENDIF.
         ls_proposal-hu_exid  = iv_exidv.
         ls_proposal-plant    = iv_werks.
         ls_proposal-stge_loc = iv_lgort.
@@ -265,7 +271,9 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
     CLEAR: ev_is_error, et_bapiret.
 
     TRY.
-        zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'HU' ).
+        IF iv_commit = abap_true.
+          zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'HU' ).
+        ENDIF.
         CALL FUNCTION 'BAPI_HU_DELETE'
           EXPORTING
             hukey  = iv_exidv
@@ -289,7 +297,9 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
     CLEAR: ev_is_error, et_bapiret.
 
     TRY.
-        zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'HU' ).
+        IF iv_commit = abap_true.
+          zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'HU' ).
+        ENDIF.
         IF iv_unpack = abap_true.
           CALL FUNCTION 'BAPI_HU_UNPACK'
             EXPORTING

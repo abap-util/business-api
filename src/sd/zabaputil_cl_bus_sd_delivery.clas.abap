@@ -1,3 +1,7 @@
+"! Outbound deliveries. The write methods reset the delivery, HU and serial
+"! number buffers before they post only with iv_commit = abap_true: with
+"! abap_false the caller owns the LUW, and the buffers hold what its earlier
+"! calls posted.
 CLASS zabaputil_cl_bus_sd_delivery DEFINITION
   PUBLIC
   FINAL
@@ -89,9 +93,11 @@ CLASS zabaputil_cl_bus_sd_delivery DEFINITION
     TYPES ty_t_item_chg TYPE STANDARD TABLE OF bapiobdlvitemchg WITH DEFAULT KEY.
     TYPES ty_t_item_ctrl TYPE STANDARD TABLE OF bapiobdlvitemctrlchg WITH DEFAULT KEY.
 
+    "! @parameter iv_refresh | reset the delivery buffers first - only where the caller commits per call
     CLASS-METHODS call_change
       IMPORTING
         iv_vbeln       TYPE vbeln_vl
+        iv_refresh     TYPE abap_bool
         iv_delete      TYPE abap_bool DEFAULT abap_false
         it_item_data   TYPE ty_t_item_chg OPTIONAL
         it_item_ctrl   TYPE ty_t_item_ctrl OPTIONAL
@@ -111,7 +117,9 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
     CLEAR: ev_vbeln, ev_is_error, et_bapiret.
 
     TRY.
-        zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'DELIVERY' ).
+        IF iv_commit = abap_true.
+          zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'DELIVERY' ).
+        ENDIF.
         lt_item = it_item.
         CALL FUNCTION 'BAPI_OUTB_DELIVERY_CREATE_SLS'
           EXPORTING
@@ -181,6 +189,7 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
                                     deliv_item = iv_posnr
                                     chg_delqty = abap_true ) ).
           call_change( EXPORTING iv_vbeln     = iv_vbeln
+                                 iv_refresh   = iv_commit
                                  it_item_data = lt_item_data
                                  it_item_ctrl = lt_item_ctrl
                        CHANGING  ct_bapiret   = et_bapiret ).
@@ -204,7 +213,9 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
     CLEAR: ev_is_error, et_bapiret.
 
     TRY.
-        zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'DELIVERY' ).
+        IF iv_commit = abap_true.
+          zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'DELIVERY' ).
+        ENDIF.
         ls_header-deliv_numb   = iv_vbeln.
         ls_control-deliv_numb  = iv_vbeln.
         ls_control-post_gi_flg = abap_true.
@@ -239,7 +250,9 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
           zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Delivery { iv_vbeln ALPHA = OUT } not found|
                                                             CHANGING  ct_bapiret = et_bapiret ).
         ELSE.
-          zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'DELIVERY' ).
+          IF iv_commit = abap_true.
+            zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'DELIVERY' ).
+          ENDIF.
           " a plain RAISE in the module would leave an older message in sy-msg
           CLEAR: sy-msgid, sy-msgno.
           CALL FUNCTION 'WS_REVERSE_GOODS_ISSUE'
@@ -285,6 +298,7 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
                                   deliv_item = iv_posnr
                                   del_item   = abap_true ) ).
         call_change( EXPORTING iv_vbeln     = iv_vbeln
+                               iv_refresh   = iv_commit
                                it_item_data = lt_item_data
                                it_item_ctrl = lt_item_ctrl
                      CHANGING  ct_bapiret   = et_bapiret ).
@@ -305,6 +319,7 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
 
     TRY.
         call_change( EXPORTING iv_vbeln   = iv_vbeln
+                               iv_refresh = iv_commit
                                iv_delete  = abap_true
                      CHANGING  ct_bapiret = et_bapiret ).
       CATCH cx_root INTO DATA(lx_error).
@@ -326,7 +341,9 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
     DATA lt_item_ctrl TYPE ty_t_item_ctrl.
     DATA lt_return    TYPE bapirettab.
 
-    zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'DELIVERY' ).
+    IF iv_refresh = abap_true.
+      zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'DELIVERY' ).
+    ENDIF.
     ls_header-deliv_numb  = iv_vbeln.
     ls_control-deliv_numb = iv_vbeln.
     ls_control-dlv_del    = iv_delete.
