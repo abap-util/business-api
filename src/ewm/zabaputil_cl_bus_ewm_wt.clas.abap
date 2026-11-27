@@ -161,6 +161,7 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
     DATA lr_tanum   TYPE REF TO data.
     DATA lt_return  TYPE bapirettab.
     DATA lv_false   TYPE abap_bool VALUE abap_false.
+    DATA lv_huident TYPE string.
     FIELD-SYMBOLS <table> TYPE STANDARD TABLE.
     FIELD-SYMBOLS <row>   TYPE any.
     FIELD-SYMBOLS <field> TYPE any.
@@ -171,7 +172,9 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
         CREATE DATA lr_table TYPE ('/SCWM/TT_TO_CREA_HU').
         ASSIGN lr_table->* TO <table>.
         INSERT INITIAL LINE INTO TABLE <table> ASSIGNING <row>.
-        set_component( EXPORTING iv_name = 'HUIDENT' iv_value = iv_huident CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
+        lv_huident = zabaputil_cl_bus_util_context=>conv_alpha_in( iv_value  = iv_huident
+                                                                   iv_length = 20 ).
+        set_component( EXPORTING iv_name = 'HUIDENT' iv_value = lv_huident CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
         set_component( EXPORTING iv_name = 'PROCTY'  iv_value = iv_procty  CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
         set_component( EXPORTING iv_name = 'NLTYP'   iv_value = iv_nltyp   CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
         set_component( EXPORTING iv_name = 'NLPLA'   iv_value = iv_nlpla   CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
