@@ -135,6 +135,15 @@ nothing commits or rolls back on its own.
   process or the installation that needed it. Code from a customer system is
   never copied in: a method is written here, against the standard interface.
   Examples use the neutral values SAP documentation uses (`1000`, `0001`).
+- **A parameter is named after the DDIC field it carries** (`iv_vbeln`,
+  `iv_menge` with `iv_meins`, `iv_budat`), and a quantity comes with its unit.
+  Published signatures only grow (a new optional parameter, never a rename or
+  a removal), so these older names stay: `iv_quantity`/`iv_unit` in `sd_hu`
+  (VEMNG/VEMEH) and `ewm_wt=>create_product` (generic, as EWM types are not
+  referenced statically), `iv_quantity` with the optional `iv_vrkme` in
+  `sd_order=>change_quantity`, `iv_lfimg`/`iv_vrkme` in
+  `sd_delivery=>change_quantity`, and `iv_date` for a count, measurement or
+  key date where the BAPI has no posting date (`mm_inventory=>count`, `pm_*`).
 - **Complex BAPI input stays a BAPI structure** (`is_header TYPE bapisdhd1`);
   convenience methods with simple parameters are added for the common cases.
 - **Material numbers go through `zabaputil_cl_bus_util_context=>bapi_set_material( )`**, which

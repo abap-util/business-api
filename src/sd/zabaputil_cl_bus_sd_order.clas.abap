@@ -57,11 +57,15 @@ CLASS zabaputil_cl_bus_sd_order DEFINITION
 
     "! Changes the quantity of an order item: the quantity of its first schedule line
     "! (the lowest schedule line number); further schedule lines keep their quantity
+    "! @parameter iv_quantity | the new quantity, in the sales unit of the item (VBAP-VRKME)
+    "! @parameter iv_vrkme    | the unit of iv_quantity; when passed, a unit other than the
+    "!                          sales unit of the item is an error, as the quantity is not converted
     CLASS-METHODS change_quantity
       IMPORTING
         iv_vbeln    TYPE vbeln_va
         iv_posnr    TYPE posnr_va
         iv_quantity TYPE kwmeng
+        iv_vrkme    TYPE vrkme OPTIONAL
         iv_commit   TYPE abap_bool DEFAULT abap_false
       EXPORTING
         ev_is_error TYPE abap_bool
@@ -201,8 +205,21 @@ CLASS zabaputil_cl_bus_sd_order IMPLEMENTATION.
     DATA lt_itemx     TYPE ty_t_itemx.
     DATA lt_schedule  TYPE ty_t_schedule.
     DATA lt_schedulex TYPE ty_t_schedulex.
+    DATA lv_vrkme     TYPE vrkme.
 
     CLEAR: ev_is_error, et_bapiret.
+
+    IF iv_vrkme IS NOT INITIAL.
+      SELECT SINGLE vrkme FROM vbap INTO @lv_vrkme WHERE vbeln = @iv_vbeln AND posnr = @iv_posnr.
+      IF sy-subrc = 0 AND lv_vrkme <> iv_vrkme.
+        zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Unit { iv_vrkme } is not the sales unit { lv_vrkme } of item { iv_posnr ALPHA = OUT }|
+                                                          CHANGING  ct_bapiret = et_bapiret ).
+        zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                    CHANGING  ct_bapiret  = et_bapiret
+                                                              cv_is_error = ev_is_error ).
+        RETURN.
+      ENDIF.
+    ENDIF.
 
     SELECT etenr FROM vbep
       WHERE vbeln = @iv_vbeln AND posnr = @iv_posnr
