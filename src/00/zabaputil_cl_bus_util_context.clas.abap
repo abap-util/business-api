@@ -948,6 +948,37 @@ CLASS zabaputil_cl_bus_util_context DEFINITION
         decimal_format TYPE string,
       END OF ty_s_user_info.
 
+    " Every public, non-static, non-constant attribute of an exception that
+    " has a printable value - the class-specific payload the text alone does
+    " not carry (source/target type of a cast error, the offending value of a
+    " conversion error, DB object of an SQL error, ...). The general cx_root
+    " attributes (PREVIOUS, TEXTID, IS_RESUMABLE, KERNEL_ERRID) are skipped -
+    " the caller renders them itself or they carry no information.
+    CLASS-METHODS error_get_attributes
+      IMPORTING
+        val           TYPE REF TO cx_root
+      RETURNING
+        VALUE(result) TYPE ty_t_name_value.
+
+    " The source-code position an exception was raised at, as
+    " `<program> / <include> / line <n>`; empty when the runtime supplies
+    " none. Wraps cx_root->get_source_position so the dependency on the SAP
+    " standard exception API stays inside this class. This is what identifies
+    " the failing method for exceptions that carry no text of their own -
+    " a CX_SY_MOVE_CAST_ERROR only says which types did not match, the
+    " position says where.
+    CLASS-METHODS error_get_source_position
+      IMPORTING
+        val           TYPE REF TO cx_root
+      RETURNING
+        VALUE(result) TYPE string.
+
+    CLASS-METHODS rtti_get_classname_by_ref
+      IMPORTING
+        val           TYPE REF TO object
+      RETURNING
+        VALUE(result) TYPE string.
+
   PROTECTED SECTION.
 
     CLASS-METHODS msg_get_internal
@@ -2372,6 +2403,123 @@ CLASS zabaputil_cl_bus_util_context IMPLEMENTATION.
       rv_result = c_pad_left( val = rv_result
                               len = iv_length ).
     ENDIF.
+
+  ENDMETHOD.
+
+  METHOD error_get_attributes.
+
+    " declared, NOT `DATA(lv_name) = CONV string( lr_attri->name )`: a CONV
+    " that is the whole right-hand side of an assignment is "Redundant
+    " conversion for type STRING" in SLIN - the assignment converts by
+    " itself. The variable stays a string on purpose: the RTTI name is a
+    " CHAR field whose trailing blanks have no business in the rendered name
+    DATA lv_name TYPE string.
+
+    FIELD-SYMBOLS <comp> TYPE any.
+
+    IF val IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    TRY.
+        DATA(lt_attri) = rtti_get_t_attri_by_oref( val ).
+      CATCH cx_root.
+        RETURN.
+    ENDTRY.
+
+    LOOP AT lt_attri REFERENCE INTO DATA(lr_attri) "#EC CI_SORTSEQ
+         WHERE visibility  = cv_objectdescr_public
+           AND is_constant = abap_false
+           AND is_class    = abap_false.
+
+      CASE lr_attri->name.
+          " rendered by the caller (PREVIOUS as the next chain entry,
+          " KERNEL_ERRID as its own line) or without information value
+        WHEN `PREVIOUS` OR `TEXTID` OR `IS_RESUMABLE` OR `KERNEL_ERRID`.
+          CONTINUE.
+      ENDCASE.
+
+      lv_name = lr_attri->name.
+      " UNASSIGN + IS ASSIGNED, not sy-subrc - see unassign_data for the
+      " release behaviour (#1937). INSIDE A LOOP the stale-subrc reading is
+      " not just "skipped one attribute": a failed ASSIGN leaves the symbol
+      " on the PREVIOUS iteration's attribute, so a stale 0 renders that
+      " value under this attribute's name - a wrong value in the error dump,
+      " which is the one place a reader has nothing else to go by
+      UNASSIGN <comp>.
+      ASSIGN val->(lv_name) TO <comp>.
+      IF <comp> IS NOT ASSIGNED.
+        CONTINUE.
+      ENDIF.
+      IF rtti_check_printable( <comp> ) = abap_false OR <comp> IS INITIAL.
+        CONTINUE.
+      ENDIF.
+
+      INSERT VALUE #( n = lv_name
+                      v = c_trim( |{ <comp> }| ) ) INTO TABLE result.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD error_get_source_position.
+
+    " typed like the EXPORTING parameters of get_source_position (syrepid is
+    " CHAR40) - they are passed by reference, so a string would not be
+    " type-compatible here
+    DATA lv_program TYPE c LENGTH 40.
+    DATA lv_include TYPE c LENGTH 40.
+    DATA lv_line    TYPE i.
+
+    IF val IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    " open-abap - the transpiled JS runtime behind the node tests - implements
+    " get_source_position by reading a field that only the RAISE statement
+    " writes, and fails with a JS TypeError for every other exception (a
+    " runtime-thrown one, or one built with NEW). That error is not an ABAP
+    " exception, so the TRY below cannot intercept it and the caller would go
+    " down instead of reporting the error it was diagnosing. sy-saprl is
+    " `OPEN` on that runtime and a real release everywhere else.
+    IF sy-saprl = `OPEN`.
+      RETURN.
+    ENDIF.
+
+    TRY.
+        val->get_source_position( IMPORTING program_name = lv_program
+                                            include_name = lv_include
+                                            source_line  = lv_line ).
+      CATCH cx_root ##NO_HANDLER.
+        " never let the diagnostic be the reason a caller fails
+    ENDTRY.
+
+    IF lv_program IS INITIAL AND lv_line IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    result = c_trim( lv_program ).
+    " the include is the interesting part for a class (...CM001 = the method
+    " that raised); repeating it when it equals the program adds nothing
+    IF lv_include IS NOT INITIAL AND lv_include <> lv_program.
+      result = |{ result } / { c_trim( lv_include ) }|.
+    ENDIF.
+    IF lv_line IS NOT INITIAL.
+      result = |{ result } / line { lv_line }|.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD rtti_get_classname_by_ref.
+
+    " an unbound reference has no class - answer with an empty name instead
+    " of letting the RTTI call fail. Callers ask this while rendering (error
+    " context, response header), where a half-built object graph is normal
+    IF val IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    result = substring_after( val = cl_abap_classdescr=>get_class_name( val )
+                              sub = `\CLASS=` ).
 
   ENDMETHOD.
 

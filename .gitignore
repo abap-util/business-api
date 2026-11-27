@@ -3,3 +3,4 @@
 .github/out/
 deps/
 node_modules/
+node/output/

@@ -1,0 +1,25 @@
+{
+  "master": "abap-util/abap-util",
+  "commit": "c7ddefed823031664b1ca6a7ccacb30a57b9120c",
+  "rename": [
+    [
+      "zabaputil_cl_bus_util_",
+      "zabaputil_cl_util_"
+    ],
+    [
+      "zabaputil_cx_bus_util_",
+      "zabaputil_cx_util_"
+    ]
+  ],
+  "copies": [
+    {
+      "copy": "src/00/zabaputil_cl_bus_util_context.clas.abap",
+      "master": "src/zabaputil_cl_util_context.clas.abap",
+      "trimmed": true
+    },
+    {
+      "copy": "src/00/zabaputil_cx_bus_util_error.clas.abap",
+      "master": "src/zabaputil_cx_util_error.clas.abap"
+    }
+  ]
+}

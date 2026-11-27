@@ -8,6 +8,10 @@ A thin, uniform layer over the SAP standard BAPIs and function modules of the
 logistics modules: one class per business object, every action of that object
 as a static method, one error and commit contract for all of them.
 
+**Status: experimental.** Nothing here has been activated or run on a system
+yet; the README says so at the top. Keep that notice until a system has
+confirmed the classes, and remove it per module only on such evidence.
+
 **Target:** Standard ABAP — ECC 6.0 (EHP7+, 7.40 SP08) and S/4HANA on-premise /
 private cloud. The wrapped BAPIs are not released for ABAP Cloud.
 **Language:** English — code, comments, commit messages, documentation.
@@ -43,17 +47,33 @@ and `util` (no module) keeps the copies apart from the business classes.
 
 | Copy here | Master in abap-util | Scope |
 |---|---|---|
-| `zabaputil_cl_bus_util_context` | `zabaputil_cl_util_context` | trimmed to the `bapi_*` methods, `conv_alpha_in` and `uuid_get_c32`, with their helpers |
+| `zabaputil_cl_bus_util_context` | `zabaputil_cl_util_context` | trimmed to the `bapi_*` methods, `conv_alpha_in` and what the exception calls, with their helpers |
 | `zabaputil_cx_bus_util_error` | `zabaputil_cx_util_error` | as is |
 
-Copied at abap-util `64cbbb4`. The `bapi_*` methods turn abap-util's message
+**`.github/abap-util.json` is the record of the copies:** the abap-util commit
+they were taken from, the rename back to the master names, and per copy the
+master file and whether it is trimmed. abap-util's
+`.github/scripts/sync-check.mjs` reads it and compares every method body and
+declaration with the master; the job `sync` of the workflow `test` runs it at
+that commit on every pull request and fails on a difference. So a change made
+in a copy here is either synced back to abap-util (then set `commit` to the
+abap-util commit that has it) or named in the manifest - under `settled`
+(differs on purpose) or `own` (no master), with the reason. The same job
+reports the differences to abap-util's `main`, without failing: that is what a
+refresh would bring. Locally:
+`node ../abap-util/.github/scripts/sync-check.mjs --consumer .`
+
+The `bapi_*` methods turn abap-util's message
 model (`ty_t_msg`) into rows of `BAPIRET2` - of any table with its
 components, filled by name. Do not edit the copies for style: a fix goes
 into abap-util and is copied back, or is made here and synced back. To
 refresh a copy, take the master, apply the rename (back: `bus_util_` →
 `util_`), and trim the context class to the closure of the methods this
 repository calls (`bapi_*`, `conv_alpha_in`) and the exception calls
-(`uuid_get_c32`): every method, type and constant they reach, transitively.
+(`uuid_get_c32`, `rtti_check_printable`, `rtti_get_classname_by_ref`,
+`error_get_attributes`, `error_get_source_position`): every method, type and
+constant they reach, transitively. The copy's test class is `ltcl_bapi_ops`
+of the master's, renamed - refresh it together with the copy.
 A new copy must stay within 30 characters after the rename.
 
 ## The method contract — every method keeps it
@@ -86,6 +106,19 @@ CLASS-METHODS <action>
 6. **Read methods** have no `iv_commit` and end with `bapi_finish( )` without it.
 7. **Every method ends with `zabaputil_cl_bus_util_context=>bapi_finish( )`.**
 
+8. **The one exception** is `zabaputil_cl_bus_ca_status=>check_is_set( )`: a
+   predicate with one SELECT and a boolean back, no message to return. It is
+   named in `EXEMPT` of `.github/scripts/check-contract.mjs`; a new exception
+   to the contract goes there with its reason, or it fails the check.
+
+`npm run contract` checks points 1 to 7 on the source: the signature
+(`ev_is_error`, `et_bapiret`, `iv_commit`), that the last statement is
+`bapi_finish( )` or the call a convenience method delegates to, that
+`iv_commit` is passed on, that nothing raises, that every `CALL FUNCTION` is
+inside a `TRY … CATCH cx_root` (a private helper may leave that to its
+callers) and names `error_message` where it lists `EXCEPTIONS`, and that
+nothing commits or rolls back on its own.
+
 ## Rules
 
 - **Nothing customer-specific.** No Z fields, no customizing values, no
@@ -113,12 +146,22 @@ npm ci
 npm run lint       # abaplint at 7.40 SP08
 npm run downport   # 7.02: abaplint --fix + lint at v702 (changes src/ - do not commit that)
 npm run rename     # every class renamed to the 11-character placeholder prefix
+npm run contract   # the method contract above, on every business class
+npm run transpile  # package 00 to JavaScript
+npm run unit       # its unit tests (ltcl_bapi_ops) in Node.js
+npm test           # lint, rename, contract, transpile, unit
 ```
+
+CI: `abaplint` (lint), `test_rename`, and `test` with the jobs `contract`,
+`unit` and `sync` - on every pull request and every push to `main`. Actions
+are pinned to a commit sha; `bump-deps` moves the pins and the npm
+dependencies once a month in one pull request.
 
 SAP standard types are void for abaplint (no dependency has them), so it checks
 the syntax of the own code, not the BAPI field names. **Activation and the BAPI
 calls are only verified on a system** — the `bapi_*` methods are unit-tested
-in abap-util (`ltcl_bapi_ops`), the module classes have no tests yet.
+here and in abap-util (`ltcl_bapi_ops`); the module classes have the contract
+check, but no unit tests: they need the BAPIs.
 
 ## Downport and renaming
 

@@ -1,8 +1,12 @@
 [![abaplint](https://github.com/abap-util/business-api/actions/workflows/abaplint.yaml/badge.svg)](https://github.com/abap-util/business-api/actions/workflows/abaplint.yaml)
+[![test](https://github.com/abap-util/business-api/actions/workflows/test.yaml/badge.svg)](https://github.com/abap-util/business-api/actions/workflows/test.yaml)
 [![auto_downport](https://github.com/abap-util/business-api/actions/workflows/auto_downport.yaml/badge.svg)](https://github.com/abap-util/business-api/actions/workflows/auto_downport.yaml)
 
 # business-api
 Class-based access to the SAP logistics BAPIs for Standard ABAP
+
+> [!WARNING]
+> **Experimental - not yet verified on a system.** The classes pass the syntax check, the method contract check and the unit tests of package 00, all without an SAP system. The SAP standard types are unknown to these checks, so no BAPI call, parameter name or field name has been confirmed by an activation or a run yet. Expect activation errors and wrong field names; do not use it productively. Reports from a real system are the most useful contribution right now - please open an issue.
 
 #### Key Features
 * One class per business object - sales order, delivery, handling unit, goods movement, transfer order, production order, notification, ...
@@ -85,6 +89,8 @@ What every method uses comes from the `bapi_*` methods of [abap-util](https://gi
 | `zabaputil_cl_bus_util_context` | `zabaputil_cl_util_context` (trimmed to the `bapi_*` methods and their helpers) |
 | `zabaputil_cx_bus_util_error` | `zabaputil_cx_util_error` |
 
+Which abap-util commit the copies were taken from is in [.github/abap-util.json](.github/abap-util.json); the workflow `test` compares the copies with their masters on every pull request.
+
 #### Renaming
 To install business-api a second time next to another copy, run the workflow [build_rename](https://github.com/abap-util/business-api/actions/workflows/build_rename.yaml) with a new name - a customer name such as `ZMYAPI` or a registered namespace such as `/MYNS/`. It renames every class (`zabaputil_cl_bus_sd_hu` becomes `zmyapi_cl_bus_sd_hu`) and pushes the result to the branch `rename_<name>`, ready for abapGit.
 
@@ -94,5 +100,9 @@ npm ci
 npm run lint       # abaplint at 7.40 SP08
 npm run downport   # rewrite src/ to 7.02 syntax and lint it at v702 - what auto_downport pushes to 702
 npm run rename     # rename every class to the longest prefix build_rename allows
+npm run contract   # the method contract, read from the source of every business class
+npm run transpile  # transpile package 00 to JavaScript
+npm run unit       # run its unit tests in Node.js
+npm test           # lint, rename, contract, transpile and unit in one go
 ```
 The conventions every change keeps are in [AGENTS.md](AGENTS.md). Nothing here has been verified on a system yet - the BAPI field and parameter names are only checked when a system activates the classes.
