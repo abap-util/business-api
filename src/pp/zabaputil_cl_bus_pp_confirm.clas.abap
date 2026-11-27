@@ -8,6 +8,7 @@ CLASS zabaputil_cl_bus_pp_confirm DEFINITION
     TYPES ty_t_timeticket TYPE STANDARD TABLE OF bapi_pp_timeticket WITH DEFAULT KEY.
     TYPES ty_t_goodsmovement TYPE STANDARD TABLE OF bapi2017_gm_item_create WITH DEFAULT KEY.
     TYPES ty_t_link TYPE STANDARD TABLE OF bapi_link_conf_goodsmov WITH DEFAULT KEY.
+    TYPES ty_t_detail_return TYPE STANDARD TABLE OF bapi_coru_return WITH DEFAULT KEY.
 
     "! Proposes time tickets for operations (BAPI_PRODORDCONF_GET_TT_PROP) -
     "! fill ORDERID, OPERATION and YIELD, get back the proposed values and goods movements
@@ -22,6 +23,9 @@ CLASS zabaputil_cl_bus_pp_confirm DEFINITION
         et_bapiret       TYPE bapirettab.
 
     "! Posts time ticket confirmations with their goods movements (BAPI_PRODORDCONF_CREATE_TT)
+    "! @parameter et_detail_return | the BAPI's DETAIL_RETURN, one row per time ticket:
+    "!                               the confirmation number and counter of each posted
+    "!                               ticket (the input of cancel( )) next to its message
     CLASS-METHODS create
       IMPORTING
         it_timeticket    TYPE ty_t_timeticket
@@ -29,6 +33,7 @@ CLASS zabaputil_cl_bus_pp_confirm DEFINITION
         it_link          TYPE ty_t_link OPTIONAL
         iv_commit        TYPE abap_bool DEFAULT abap_false
       EXPORTING
+        et_detail_return TYPE ty_t_detail_return
         ev_is_error      TYPE abap_bool
         et_bapiret       TYPE bapirettab.
 
@@ -85,12 +90,12 @@ CLASS zabaputil_cl_bus_pp_confirm IMPLEMENTATION.
   METHOD create.
 
     DATA ls_return        TYPE bapiret2.
-    DATA lt_detail        TYPE STANDARD TABLE OF bapi_coru_return WITH DEFAULT KEY.
+    DATA lt_detail        TYPE ty_t_detail_return.
     DATA lt_timeticket    TYPE ty_t_timeticket.
     DATA lt_goodsmovement TYPE ty_t_goodsmovement.
     DATA lt_link          TYPE ty_t_link.
 
-    CLEAR: ev_is_error, et_bapiret.
+    CLEAR: et_detail_return, ev_is_error, et_bapiret.
 
     TRY.
         lt_timeticket    = it_timeticket.
@@ -104,6 +109,7 @@ CLASS zabaputil_cl_bus_pp_confirm IMPLEMENTATION.
             goodsmovements     = lt_goodsmovement
             link_conf_goodsmov = lt_link
             detail_return      = lt_detail.
+        et_detail_return = lt_detail.
         zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = ls_return
                                                               CHANGING  ct_bapiret = et_bapiret ).
         zabaputil_cl_bus_util_context=>bapi_msg_add_table( EXPORTING it_table   = lt_detail
