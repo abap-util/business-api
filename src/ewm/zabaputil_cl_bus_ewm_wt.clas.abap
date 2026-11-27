@@ -171,33 +171,31 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
         CREATE DATA lr_table TYPE ('/SCWM/TT_TO_CREA_HU').
         ASSIGN lr_table->* TO <table>.
         INSERT INITIAL LINE INTO TABLE <table> ASSIGNING <row>.
-        ASSIGN COMPONENT 'HUIDENT' OF STRUCTURE <row> TO <field>.
-        <field> = iv_huident.
-        ASSIGN COMPONENT 'PROCTY' OF STRUCTURE <row> TO <field>.
-        <field> = iv_procty.
-        ASSIGN COMPONENT 'NLTYP' OF STRUCTURE <row> TO <field>.
-        <field> = iv_nltyp.
-        ASSIGN COMPONENT 'NLPLA' OF STRUCTURE <row> TO <field>.
-        <field> = iv_nlpla.
-        ASSIGN COMPONENT 'SQUIT' OF STRUCTURE <row> TO <field>.
-        <field> = iv_squit.
+        set_component( EXPORTING iv_name = 'HUIDENT' iv_value = iv_huident CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
+        set_component( EXPORTING iv_name = 'PROCTY'  iv_value = iv_procty  CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
+        set_component( EXPORTING iv_name = 'NLTYP'   iv_value = iv_nltyp   CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
+        set_component( EXPORTING iv_name = 'NLPLA'   iv_value = iv_nlpla   CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
+        set_component( EXPORTING iv_name = 'SQUIT'   iv_value = iv_squit   CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
 
-        CREATE DATA lr_lgnum TYPE ('/SCWM/LGNUM').
-        ASSIGN lr_lgnum->* TO <field>.
-        <field> = iv_lgnum.
-        CREATE DATA lr_tanum TYPE ('/SCWM/TANUM').
+        " a field the structure does not have is an error: no task without it
+        IF zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_false.
+          CREATE DATA lr_lgnum TYPE ('/SCWM/LGNUM').
+          ASSIGN lr_lgnum->* TO <field>.
+          <field> = iv_lgnum.
+          CREATE DATA lr_tanum TYPE ('/SCWM/TANUM').
 
-        zabaputil_cl_bus_util_context=>bapi_call_function(
-                            EXPORTING iv_name    = '/SCWM/TO_CREATE_MOVE_HU'
-                                      it_param   = VALUE #( ( name = 'IV_LGNUM'       kind = abap_func_exporting value = lr_lgnum )
-                                                            ( name = 'IV_COMMIT_WORK' kind = abap_func_exporting value = REF #( lv_false ) )
-                                                            ( name = 'IT_CREATE_HU'   kind = abap_func_exporting value = lr_table )
-                                                            ( name = 'EV_TANUM'       kind = abap_func_importing value = lr_tanum )
-                                                            ( name = 'ET_BAPIRET'     kind = abap_func_importing value = REF #( lt_return ) ) )
-                            CHANGING  ct_bapiret = et_bapiret ).
-        INSERT LINES OF lt_return INTO TABLE et_bapiret.
-        ASSIGN lr_tanum->* TO <field>.
-        ev_tanum = <field>.
+          zabaputil_cl_bus_util_context=>bapi_call_function(
+                              EXPORTING iv_name    = '/SCWM/TO_CREATE_MOVE_HU'
+                                        it_param   = VALUE #( ( name = 'IV_LGNUM'       kind = abap_func_exporting value = lr_lgnum )
+                                                              ( name = 'IV_COMMIT_WORK' kind = abap_func_exporting value = REF #( lv_false ) )
+                                                              ( name = 'IT_CREATE_HU'   kind = abap_func_exporting value = lr_table )
+                                                              ( name = 'EV_TANUM'       kind = abap_func_importing value = lr_tanum )
+                                                              ( name = 'ET_BAPIRET'     kind = abap_func_importing value = REF #( lt_return ) ) )
+                              CHANGING  ct_bapiret = et_bapiret ).
+          INSERT LINES OF lt_return INTO TABLE et_bapiret.
+          ASSIGN lr_tanum->* TO <field>.
+          ev_tanum = <field>.
+        ENDIF.
       CATCH cx_root INTO DATA(lx_error).
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
@@ -380,6 +378,7 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
     DATA lt_return TYPE bapirettab.
     DATA lv_false  TYPE abap_bool VALUE abap_false.
     DATA lv_type   TYPE string.
+    DATA lv_tanum  TYPE string.
     FIELD-SYMBOLS <table> TYPE STANDARD TABLE.
     FIELD-SYMBOLS <row>   TYPE any.
     FIELD-SYMBOLS <field> TYPE any.
@@ -389,27 +388,29 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
         CREATE DATA lr_table TYPE (lv_type).
         ASSIGN lr_table->* TO <table>.
         INSERT INITIAL LINE INTO TABLE <table> ASSIGNING <row>.
-        ASSIGN COMPONENT 'TANUM' OF STRUCTURE <row> TO <field>.
-        <field> = zabaputil_cl_bus_util_context=>conv_alpha_in( iv_value  = iv_tanum
-                                                                iv_length = 12 ).
-        UNASSIGN <field>.
+        lv_tanum = zabaputil_cl_bus_util_context=>conv_alpha_in( iv_value  = iv_tanum
+                                                                 iv_length = 12 ).
+        set_component( EXPORTING iv_name = 'TANUM' iv_value = lv_tanum CHANGING cs_row = <row> ct_bapiret = ct_bapiret ).
+        " SQUIT only where the table type has it
         ASSIGN COMPONENT 'SQUIT' OF STRUCTURE <row> TO <field>.
-        IF <field> IS ASSIGNED.
+        IF sy-subrc = 0.
           <field> = abap_true.
         ENDIF.
 
-        CREATE DATA lr_lgnum TYPE ('/SCWM/LGNUM').
-        ASSIGN lr_lgnum->* TO <field>.
-        <field> = iv_lgnum.
+        IF zabaputil_cl_bus_util_context=>bapi_check_is_error( ct_bapiret ) = abap_false.
+          CREATE DATA lr_lgnum TYPE ('/SCWM/LGNUM').
+          ASSIGN lr_lgnum->* TO <field>.
+          <field> = iv_lgnum.
 
-        zabaputil_cl_bus_util_context=>bapi_call_function(
-                            EXPORTING iv_name    = iv_function
-                                      it_param   = VALUE #( ( name = 'IV_LGNUM'       kind = abap_func_exporting value = lr_lgnum )
-                                                            ( name = 'IV_COMMIT_WORK' kind = abap_func_exporting value = REF #( lv_false ) )
-                                                            ( name = to_upper( iv_table_name ) kind = abap_func_exporting value = lr_table )
-                                                            ( name = 'ET_BAPIRET'     kind = abap_func_importing value = REF #( lt_return ) ) )
-                            CHANGING  ct_bapiret = ct_bapiret ).
-        INSERT LINES OF lt_return INTO TABLE ct_bapiret.
+          zabaputil_cl_bus_util_context=>bapi_call_function(
+                              EXPORTING iv_name    = iv_function
+                                        it_param   = VALUE #( ( name = 'IV_LGNUM'       kind = abap_func_exporting value = lr_lgnum )
+                                                              ( name = 'IV_COMMIT_WORK' kind = abap_func_exporting value = REF #( lv_false ) )
+                                                              ( name = to_upper( iv_table_name ) kind = abap_func_exporting value = lr_table )
+                                                              ( name = 'ET_BAPIRET'     kind = abap_func_importing value = REF #( lt_return ) ) )
+                              CHANGING  ct_bapiret = ct_bapiret ).
+          INSERT LINES OF lt_return INTO TABLE ct_bapiret.
+        ENDIF.
       CATCH cx_root INTO DATA(lx_error).
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = ct_bapiret ).
