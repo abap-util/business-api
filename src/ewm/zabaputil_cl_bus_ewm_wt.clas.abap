@@ -24,6 +24,65 @@ CLASS zabaputil_cl_bus_ewm_wt DEFINITION
         ev_is_error TYPE abap_bool
         et_bapiret  TYPE bapirettab.
 
+    "! Creates warehouse tasks from rows of the standard create structure (/SCWM/TO_CREATE)
+    "! @parameter it_create | rows of /SCWM/TT_TO_CREATE_INT
+    "! @parameter ev_tanum  | number the module returns for the tasks created
+    CLASS-METHODS create
+      IMPORTING
+        iv_lgnum    TYPE clike
+        it_create   TYPE STANDARD TABLE
+        iv_commit   TYPE abap_bool DEFAULT abap_false
+      EXPORTING
+        ev_tanum    TYPE string
+        ev_is_error TYPE abap_bool
+        et_bapiret  TYPE bapirettab.
+
+    "! Creates a warehouse task that moves a product quantity (/SCWM/TO_CREATE).
+    "! The product number is converted to the product id by
+    "! zabaputil_cl_bus_ewm_stock=>read_product_id( ).
+    "! @parameter iv_procty   | warehouse process type
+    "! @parameter iv_unit     | unit of iv_quantity (alternative unit of measure)
+    "! @parameter iv_vlpla    | source bin
+    "! @parameter iv_nlpla    | destination bin
+    "! @parameter iv_vlenr    | source handling unit
+    "! @parameter iv_nlenr    | destination handling unit
+    "! @parameter iv_cat      | stock type
+    "! @parameter iv_owner    | owner of the stock
+    "! @parameter iv_entitled | party entitled to dispose
+    "! @parameter iv_squit    | abap_true: confirm at once
+    CLASS-METHODS create_product
+      IMPORTING
+        iv_lgnum    TYPE clike
+        iv_procty   TYPE clike
+        iv_matnr    TYPE clike
+        iv_quantity TYPE numeric
+        iv_unit     TYPE clike
+        iv_vlpla    TYPE clike OPTIONAL
+        iv_nlpla    TYPE clike OPTIONAL
+        iv_vlenr    TYPE clike OPTIONAL
+        iv_nlenr    TYPE clike OPTIONAL
+        iv_cat      TYPE clike OPTIONAL
+        iv_owner    TYPE clike OPTIONAL
+        iv_entitled TYPE clike OPTIONAL
+        iv_charg    TYPE clike OPTIONAL
+        iv_squit    TYPE abap_bool DEFAULT abap_false
+        iv_commit   TYPE abap_bool DEFAULT abap_false
+      EXPORTING
+        ev_tanum    TYPE string
+        ev_is_error TYPE abap_bool
+        et_bapiret  TYPE bapirettab.
+
+    "! Changes open warehouse tasks (/SCWM/TO_CHANGE)
+    "! @parameter it_change | rows of the table type of the parameter IT_CHANGE
+    CLASS-METHODS change
+      IMPORTING
+        iv_lgnum    TYPE clike
+        it_change   TYPE STANDARD TABLE
+        iv_commit   TYPE abap_bool DEFAULT abap_false
+      EXPORTING
+        ev_is_error TYPE abap_bool
+        et_bapiret  TYPE bapirettab.
+
     "! Reads a warehouse task - open (/SCWM/ORDIM_O) or confirmed (/SCWM/ORDIM_C)
     "! @parameter er_task | reference to the table row
     CLASS-METHODS read
@@ -68,6 +127,26 @@ CLASS zabaputil_cl_bus_ewm_wt DEFINITION
         iv_tanum      TYPE clike
       CHANGING
         ct_bapiret    TYPE bapirettab.
+
+    CLASS-METHODS call_with_rows
+      IMPORTING
+        iv_function   TYPE clike
+        iv_table_name TYPE clike
+        iv_lgnum      TYPE clike
+        it_rows       TYPE STANDARD TABLE
+        iv_tanum      TYPE abap_bool DEFAULT abap_false
+      EXPORTING
+        ev_tanum      TYPE string
+      CHANGING
+        ct_bapiret    TYPE bapirettab.
+
+    CLASS-METHODS set_component
+      IMPORTING
+        iv_name    TYPE clike
+        iv_value   TYPE any
+      CHANGING
+        cs_row     TYPE any
+        ct_bapiret TYPE bapirettab.
 
 ENDCLASS.
 
@@ -123,6 +202,94 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
+
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
+
+  ENDMETHOD.
+
+  METHOD create.
+
+    CLEAR: ev_tanum, ev_is_error, et_bapiret.
+
+    call_with_rows( EXPORTING iv_function   = '/SCWM/TO_CREATE'
+                              iv_table_name = 'IT_CREATE'
+                              iv_lgnum      = iv_lgnum
+                              it_rows       = it_create
+                              iv_tanum      = abap_true
+                    IMPORTING ev_tanum      = ev_tanum
+                    CHANGING  ct_bapiret    = et_bapiret ).
+
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
+
+  ENDMETHOD.
+
+  METHOD create_product.
+
+    DATA lr_table TYPE REF TO data.
+    DATA lv_matid TYPE zabaputil_cl_bus_ewm_stock=>ty_matid.
+    FIELD-SYMBOLS <table> TYPE STANDARD TABLE.
+    FIELD-SYMBOLS <row>   TYPE any.
+
+    CLEAR: ev_tanum, ev_is_error, et_bapiret.
+
+    zabaputil_cl_bus_ewm_stock=>read_product_id( EXPORTING iv_matnr   = iv_matnr
+                                                 IMPORTING ev_matid   = lv_matid
+                                                           et_bapiret = et_bapiret ).
+
+    IF zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_false.
+      TRY.
+          CREATE DATA lr_table TYPE ('/SCWM/TT_TO_CREATE_INT').
+          ASSIGN lr_table->* TO <table>.
+          INSERT INITIAL LINE INTO TABLE <table> ASSIGNING <row>.
+          set_component( EXPORTING iv_name = 'PROCTY'   iv_value = iv_procty   CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
+          set_component( EXPORTING iv_name = 'MATID'    iv_value = lv_matid    CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
+          set_component( EXPORTING iv_name = 'ANFME'    iv_value = iv_quantity CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
+          set_component( EXPORTING iv_name = 'ALTME'    iv_value = iv_unit     CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
+          set_component( EXPORTING iv_name = 'VLPLA'    iv_value = iv_vlpla    CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
+          set_component( EXPORTING iv_name = 'NLPLA'    iv_value = iv_nlpla    CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
+          set_component( EXPORTING iv_name = 'VLENR'    iv_value = iv_vlenr    CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
+          set_component( EXPORTING iv_name = 'NLENR'    iv_value = iv_nlenr    CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
+          set_component( EXPORTING iv_name = 'CAT'      iv_value = iv_cat      CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
+          set_component( EXPORTING iv_name = 'OWNER'    iv_value = iv_owner    CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
+          set_component( EXPORTING iv_name = 'ENTITLED' iv_value = iv_entitled CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
+          set_component( EXPORTING iv_name = 'CHARG'    iv_value = iv_charg    CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
+          set_component( EXPORTING iv_name = 'SQUIT'    iv_value = iv_squit    CHANGING cs_row = <row> ct_bapiret = et_bapiret ).
+
+          " a field the structure does not have is an error: no task without it
+          IF zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_false.
+            call_with_rows( EXPORTING iv_function   = '/SCWM/TO_CREATE'
+                                      iv_table_name = 'IT_CREATE'
+                                      iv_lgnum      = iv_lgnum
+                                      it_rows       = <table>
+                                      iv_tanum      = abap_true
+                            IMPORTING ev_tanum      = ev_tanum
+                            CHANGING  ct_bapiret    = et_bapiret ).
+          ENDIF.
+        CATCH cx_root INTO DATA(lx_error).
+          zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                                 CHANGING  ct_bapiret = et_bapiret ).
+      ENDTRY.
+    ENDIF.
+
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
+
+  ENDMETHOD.
+
+  METHOD change.
+
+    CLEAR: ev_is_error, et_bapiret.
+
+    call_with_rows( EXPORTING iv_function   = '/SCWM/TO_CHANGE'
+                              iv_table_name = 'IT_CHANGE'
+                              iv_lgnum      = iv_lgnum
+                              it_rows       = it_change
+                    CHANGING  ct_bapiret    = et_bapiret ).
 
     zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
                                                 CHANGING  ct_bapiret  = et_bapiret
@@ -247,6 +414,82 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = ct_bapiret ).
     ENDTRY.
+
+  ENDMETHOD.
+
+  METHOD call_with_rows.
+
+    DATA lr_rows   TYPE REF TO data.
+    DATA lr_lgnum  TYPE REF TO data.
+    DATA lr_tanum  TYPE REF TO data.
+    DATA lt_param  TYPE abap_func_parmbind_tab.
+    DATA ls_param  TYPE abap_func_parmbind.
+    DATA lt_return TYPE bapirettab.
+    DATA lv_false  TYPE abap_bool VALUE abap_false.
+    FIELD-SYMBOLS <field> TYPE any.
+
+    CLEAR ev_tanum.
+
+    TRY.
+        CREATE DATA lr_lgnum TYPE ('/SCWM/LGNUM').
+        ASSIGN lr_lgnum->* TO <field>.
+        <field> = iv_lgnum.
+        GET REFERENCE OF it_rows INTO lr_rows.
+
+        ls_param-kind  = abap_func_exporting.
+        ls_param-name  = 'IV_LGNUM'.
+        ls_param-value = lr_lgnum.
+        INSERT ls_param INTO TABLE lt_param.
+        ls_param-name = 'IV_UPDATE_TASK'.
+        GET REFERENCE OF lv_false INTO ls_param-value.
+        INSERT ls_param INTO TABLE lt_param.
+        ls_param-name = 'IV_COMMIT_WORK'.
+        INSERT ls_param INTO TABLE lt_param.
+        ls_param-name  = to_upper( iv_table_name ).
+        ls_param-value = lr_rows.
+        INSERT ls_param INTO TABLE lt_param.
+
+        ls_param-kind = abap_func_importing.
+        ls_param-name = 'ET_BAPIRET'.
+        GET REFERENCE OF lt_return INTO ls_param-value.
+        INSERT ls_param INTO TABLE lt_param.
+        IF iv_tanum = abap_true.
+          CREATE DATA lr_tanum TYPE ('/SCWM/TANUM').
+          ls_param-name  = 'EV_TANUM'.
+          ls_param-value = lr_tanum.
+          INSERT ls_param INTO TABLE lt_param.
+        ENDIF.
+
+        zabaputil_cl_bus_util_context=>bapi_call_function( EXPORTING iv_name    = iv_function
+                                                                     it_param   = lt_param
+                                                           CHANGING  ct_bapiret = ct_bapiret ).
+        INSERT LINES OF lt_return INTO TABLE ct_bapiret.
+        IF lr_tanum IS BOUND.
+          ASSIGN lr_tanum->* TO <field>.
+          ev_tanum = <field>.
+        ENDIF.
+      CATCH cx_root INTO DATA(lx_error).
+        zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                               CHANGING  ct_bapiret = ct_bapiret ).
+    ENDTRY.
+
+  ENDMETHOD.
+
+  METHOD set_component.
+
+    FIELD-SYMBOLS <field> TYPE any.
+
+    IF iv_value IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    ASSIGN COMPONENT iv_name OF STRUCTURE cs_row TO <field>.
+    IF sy-subrc <> 0.
+      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Field { iv_name } is not part of the structure|
+                                                        CHANGING  ct_bapiret = ct_bapiret ).
+      RETURN.
+    ENDIF.
+    <field> = iv_value.
 
   ENDMETHOD.
 

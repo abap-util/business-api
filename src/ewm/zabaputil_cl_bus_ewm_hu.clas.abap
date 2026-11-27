@@ -7,6 +7,25 @@ CLASS zabaputil_cl_bus_ewm_hu DEFINITION
 
   PUBLIC SECTION.
 
+    "! Creates a handling unit with the packing class (/SCWM/CL_WM_PACKING) and
+    "! saves it. The warehouse number is set in the transaction manager (/SCWM/CL_TM).
+    "! @parameter iv_pmat    | packaging material, a product number
+    "! @parameter iv_huident | handling unit number; initial: the number range of the packaging material
+    "! @parameter iv_lgpla   | storage bin the handling unit is created on
+    "! @parameter er_header  | reference to the header of the new handling unit (/SCWM/S_HUHDR_INT)
+    CLASS-METHODS create
+      IMPORTING
+        iv_lgnum    TYPE clike
+        iv_pmat     TYPE clike
+        iv_huident  TYPE clike OPTIONAL
+        iv_lgpla    TYPE clike OPTIONAL
+        iv_commit   TYPE abap_bool DEFAULT abap_false
+      EXPORTING
+        ev_huident  TYPE string
+        er_header   TYPE REF TO data
+        ev_is_error TYPE abap_bool
+        et_bapiret  TYPE bapirettab.
+
     "! Reads the header of a handling unit (/SCWM/HUHDR)
     "! @parameter er_header | reference to the /SCWM/HUHDR row
     CLASS-METHODS read
@@ -36,6 +55,92 @@ ENDCLASS.
 
 
 CLASS zabaputil_cl_bus_ewm_hu IMPLEMENTATION.
+
+  METHOD create.
+
+    DATA lo_pack    TYPE REF TO object.
+    DATA lv_lgnum   TYPE c LENGTH 4.
+    DATA lv_huident TYPE c LENGTH 20.
+    DATA lv_lgpla   TYPE c LENGTH 18.
+    DATA lv_matid   TYPE zabaputil_cl_bus_ewm_stock=>ty_matid.
+    DATA lv_false   TYPE abap_bool VALUE abap_false.
+    FIELD-SYMBOLS <header> TYPE any.
+    FIELD-SYMBOLS <field>  TYPE any.
+
+    CLEAR: ev_huident, er_header, ev_is_error, et_bapiret.
+
+    lv_lgnum   = iv_lgnum.
+    lv_huident = iv_huident.
+    lv_lgpla   = iv_lgpla.
+
+    zabaputil_cl_bus_ewm_stock=>read_product_id( EXPORTING iv_matnr   = iv_pmat
+                                                 IMPORTING ev_matid   = lv_matid
+                                                           et_bapiret = et_bapiret ).
+
+    IF zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_false.
+      TRY.
+          CALL METHOD ('/SCWM/CL_TM')=>('SET_LGNUM')
+            EXPORTING
+              iv_lgnum = lv_lgnum.
+          CALL METHOD ('/SCWM/CL_WM_PACKING')=>('GET_INSTANCE')
+            IMPORTING
+              eo_instance = lo_pack.
+          CALL METHOD lo_pack->('INIT')
+            EXPORTING
+              iv_lgnum = lv_lgnum
+            EXCEPTIONS
+              OTHERS   = 1.
+          IF sy-subrc <> 0.
+            zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'INIT'
+                                                            CHANGING  ct_bapiret = et_bapiret ).
+          ELSE.
+            CREATE DATA er_header TYPE ('/SCWM/S_HUHDR_INT').
+            ASSIGN er_header->* TO <header>.
+            CALL METHOD lo_pack->('CREATE_HU')
+              EXPORTING
+                iv_pmat    = lv_matid
+                iv_huident = lv_huident
+                i_location = lv_lgpla
+              RECEIVING
+                es_huhdr   = <header>
+              EXCEPTIONS
+                OTHERS     = 1.
+            IF sy-subrc <> 0.
+              zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'CREATE_HU'
+                                                              CHANGING  ct_bapiret = et_bapiret ).
+            ELSE.
+              CALL METHOD lo_pack->('SAVE')
+                EXPORTING
+                  iv_commit = lv_false
+                  iv_wait   = lv_false
+                EXCEPTIONS
+                  OTHERS    = 1.
+              IF sy-subrc <> 0.
+                zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'SAVE'
+                                                                CHANGING  ct_bapiret = et_bapiret ).
+              ELSE.
+                ASSIGN COMPONENT 'HUIDENT' OF STRUCTURE <header> TO <field>.
+                IF sy-subrc = 0.
+                  ev_huident = <field>.
+                ENDIF.
+              ENDIF.
+            ENDIF.
+          ENDIF.
+        CATCH cx_root INTO DATA(lx_error).
+          zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
+                                                                 CHANGING  ct_bapiret = et_bapiret ).
+      ENDTRY.
+    ENDIF.
+
+    IF zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_true.
+      CLEAR: ev_huident, er_header.
+    ENDIF.
+
+    zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
+                                                CHANGING  ct_bapiret  = et_bapiret
+                                                          cv_is_error = ev_is_error ).
+
+  ENDMETHOD.
 
   METHOD read.
 
