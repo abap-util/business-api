@@ -979,6 +979,14 @@ CLASS zabaputil_cl_bus_util_context DEFINITION
       RETURNING
         VALUE(result) TYPE string.
 
+    " The base value of an IF_ABAP_BEHV=>T_FAIL_CAUSE value, from its name;
+    " -1 for a name this release does not know.
+    CLASS-METHODS msg_get_rap_cause_value
+      IMPORTING
+        name          TYPE clike
+      RETURNING
+        VALUE(result) TYPE i.
+
   PROTECTED SECTION.
 
     CLASS-METHODS msg_get_internal
@@ -1377,7 +1385,7 @@ CLASS zabaputil_cl_bus_util_context IMPLEMENTATION.
     " guards against absolute names reused by other (local/anonymous) types
     lv_absolute_name = lo_struct->absolute_name.
     ASSIGN mt_attri_cache[ absolute_name = lv_absolute_name ] TO FIELD-SYMBOL(<ls_attri_cache>).
-    IF sy-subrc = 0 AND <ls_attri_cache>-o_struct = lo_struct.
+    IF <ls_attri_cache> IS ASSIGNED AND <ls_attri_cache>-o_struct = lo_struct.
       result = <ls_attri_cache>-t_attri.
       RETURN.
     ENDIF.
@@ -1807,7 +1815,6 @@ CLASS zabaputil_cl_bus_util_context IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD msg_get_rap_row.
-
     CLEAR messages.
     is_row = abap_false.
 
@@ -1843,8 +1850,18 @@ CLASS zabaputil_cl_bus_util_context IMPLEMENTATION.
         IF lv_meta_built = abap_false.
           lt_meta = msg_get_rap_meta( val ).
         ENDIF.
+        " %FAIL-CAUSE is the enumeration IF_ABAP_BEHV=>T_FAIL_CAUSE (base
+        " type i). An enumerated value does not convert to i - a plain MOVE
+        " is the runtime error UC_OBJECTS_NOT_CONVERTIBLE - so it is read by
+        " its name (a string template writes the name) and mapped to the
+        " base value. Type kind `k` is the enumeration (literal: the
+        " constant typekind_enum does not exist on 7.02).
         DATA lv_cause TYPE i.
-        lv_cause = <cause>.
+        IF cl_abap_typedescr=>describe_by_data( <cause> )->type_kind = `k`.
+          lv_cause = msg_get_rap_cause_value( |{ <cause> }| ).
+        ELSE.
+          lv_cause = <cause>.
+        ENDIF.
         DATA(lv_text) = msg_get_rap_fail_text( lv_cause ).
         IF entity_name IS NOT INITIAL.
           lv_text = |{ entity_name }: { lv_text }|.
@@ -1854,7 +1871,6 @@ CLASS zabaputil_cl_bus_util_context IMPLEMENTATION.
                         t_meta = lt_meta ) INTO TABLE messages.
       ENDIF.
     ENDIF.
-
   ENDMETHOD.
 
   METHOD get_comp_str.
@@ -2053,21 +2069,19 @@ CLASS zabaputil_cl_bus_util_context IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD msg_get_rap_fail_text.
-
+    " the base values of IF_ABAP_BEHV=>T_FAIL_CAUSE, read on an S/4HANA
+    " system (2026-11-13) - HTTP-like codes, not a running number
     result = SWITCH string( cause
-      WHEN 0  THEN `Operation failed`
-      WHEN 1  THEN `Entity not found`
-      WHEN 2  THEN `Entity is locked`
-      WHEN 3  THEN `Authorization failure`
-      WHEN 4 OR 5 THEN `Concurrent modification`
-      WHEN 6  THEN `Operation disabled`
-      WHEN 7  THEN `Operation forbidden`
-      WHEN 8  THEN `Semantic error`
-      WHEN 9  THEN `Determination failed`
-      WHEN 10 THEN `Permission denied`
-      WHEN 11 THEN `Validation failed`
+      WHEN 0    THEN `Operation failed`
+      WHEN 401  THEN `Authorization failure`
+      WHEN 404  THEN `Entity not found`
+      WHEN 409  THEN `Concurrent modification`
+      WHEN 423  THEN `Entity is locked`
+      WHEN 424  THEN `Dependent operation failed`
+      WHEN 501  THEN `Operation not implemented`
+      WHEN 4221 THEN `Operation disabled`
+      WHEN 4222 THEN `Entity is read-only`
       ELSE |Operation failed (cause code { cause })| ).
-
   ENDMETHOD.
 
   METHOD check_msg_container.
@@ -2523,6 +2537,28 @@ CLASS zabaputil_cl_bus_util_context IMPLEMENTATION.
 
     result = substring_after( val = cl_abap_classdescr=>get_class_name( val )
                               sub = `\CLASS=` ).
+
+  ENDMETHOD.
+
+  METHOD msg_get_rap_cause_value.
+
+    " the name of an IF_ABAP_BEHV=>T_FAIL_CAUSE value to its base value;
+    " -1 for a name this release does not know, which the text keeps
+    " (the upper-case name in a variable first: the downport turns the
+    " SWITCH into a CASE, whose operand takes no built-in function on 7.02)
+    DATA lv_name TYPE string.
+    lv_name = to_upper( name ).
+    result = SWITCH i( lv_name
+      WHEN `UNSPECIFIC`      THEN 0
+      WHEN `UNAUTHORIZED`    THEN 401
+      WHEN `NOT_FOUND`       THEN 404
+      WHEN `CONFLICT`        THEN 409
+      WHEN `LOCKED`          THEN 423
+      WHEN `DEPENDENCY`      THEN 424
+      WHEN `NOT_IMPLEMENTED` THEN 501
+      WHEN `DISABLED`        THEN 4221
+      WHEN `READONLY`        THEN 4222
+      ELSE -1 ).
 
   ENDMETHOD.
 
