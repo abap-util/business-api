@@ -34,12 +34,19 @@ ENDCLASS.
 CLASS zabaputil_cl_bus_qm_insp_lot IMPLEMENTATION.
 
   METHOD read.
+      DATA temp1 TYPE string.
 
     CLEAR: es_qals, ev_is_error, et_bapiret.
 
-    SELECT SINGLE * FROM qals INTO @es_qals WHERE prueflos = @iv_prueflos.
+    SELECT SINGLE * FROM qals INTO es_qals WHERE prueflos = iv_prueflos.
     IF sy-subrc <> 0.
-      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Inspection lot { iv_prueflos ALPHA = OUT } not found|
+      
+      CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
+        EXPORTING
+          input  = iv_prueflos
+        IMPORTING
+          output = temp1.
+zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Inspection lot { temp1 } not found|
                                                         CHANGING  ct_bapiret = et_bapiret ).
     ENDIF.
 
@@ -62,6 +69,17 @@ CLASS zabaputil_cl_bus_qm_insp_lot IMPLEMENTATION.
     FIELD-SYMBOLS <language> TYPE any.
     FIELD-SYMBOLS <field>    TYPE any.
     FIELD-SYMBOLS <return>   TYPE any.
+        DATA temp1 TYPE string_table.
+        DATA temp2 LIKE temp1.
+          DATA temp8 TYPE string_table.
+          DATA temp3 LIKE temp8.
+            DATA temp4 LIKE REF TO ls_ud.
+DATA temp10 LIKE REF TO lv_prueflos.
+DATA temp7 TYPE abap_func_parmbind_tab.
+DATA temp9 LIKE LINE OF temp7.
+                DATA temp5 TYPE abap_func_excpbind_tab.
+                DATA temp6 LIKE LINE OF temp5.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -75,8 +93,20 @@ CLASS zabaputil_cl_bus_qm_insp_lot IMPLEMENTATION.
     " of types are tried in turn: a type conflict (CX_SY_DYN_CALL_ILLEGAL_TYPE)
     " is raised before the module runs, the next pair is safe to try
     TRY.
-        LOOP AT VALUE string_table( ( `BAPI2045LA` ) ( `SPRAS` ) ) INTO lv_language_type.
-          LOOP AT VALUE string_table( ( `BAPIRETURN1` ) ( `BAPIRET2` ) ) INTO lv_return_type.
+        
+        CLEAR temp1.
+        INSERT `BAPI2045LA` INTO TABLE temp1.
+        INSERT `SPRAS` INTO TABLE temp1.
+        
+        temp2 = temp1.
+        LOOP AT temp2 INTO lv_language_type.
+          
+          CLEAR temp8.
+          INSERT `BAPIRETURN1` INTO TABLE temp8.
+          INSERT `BAPIRET2` INTO TABLE temp8.
+          
+          temp3 = temp8.
+          LOOP AT temp3 INTO lv_return_type.
 
             CREATE DATA lr_language TYPE (lv_language_type).
             ASSIGN lr_language->* TO <language>.
@@ -91,16 +121,44 @@ CLASS zabaputil_cl_bus_qm_insp_lot IMPLEMENTATION.
             ENDIF.
             CREATE DATA lr_return TYPE (lv_return_type).
 
-            lt_param = VALUE #( ( name = 'NUMBER'   kind = abap_func_exporting value = REF #( lv_prueflos ) )
-                                ( name = 'UD_DATA'  kind = abap_func_exporting value = REF #( ls_ud ) )
-                                ( name = 'LANGUAGE' kind = abap_func_exporting value = lr_language )
-                                ( name = 'RETURN'   kind = abap_func_importing value = lr_return ) ).
+            
+            GET REFERENCE OF ls_ud INTO temp4.
+
+GET REFERENCE OF lv_prueflos INTO temp10.
+
+CLEAR temp7.
+
+temp9-name = 'NUMBER'.
+temp9-kind = abap_func_exporting.
+temp9-value = temp10.
+INSERT temp9 INTO TABLE temp7.
+temp9-name = 'UD_DATA'.
+temp9-kind = abap_func_exporting.
+temp9-value = temp4.
+INSERT temp9 INTO TABLE temp7.
+temp9-name = 'LANGUAGE'.
+temp9-kind = abap_func_exporting.
+temp9-value = lr_language.
+INSERT temp9 INTO TABLE temp7.
+temp9-name = 'RETURN'.
+temp9-kind = abap_func_importing.
+temp9-value = lr_return.
+INSERT temp9 INTO TABLE temp7.
+lt_param = temp7.
 
             TRY.
+                
+                CLEAR temp5.
+                
+                temp6-name = 'ERROR_MESSAGE'.
+                temp6-value = 98.
+                INSERT temp6 INTO TABLE temp5.
+                temp6-name = 'OTHERS'.
+                temp6-value = 99.
+                INSERT temp6 INTO TABLE temp5.
                 CALL FUNCTION 'BAPI_INSPLOT_SETUSAGEDECISION'
                   PARAMETER-TABLE lt_param
-                  EXCEPTION-TABLE VALUE abap_func_excpbind_tab( ( name = 'ERROR_MESSAGE' value = 98 )
-                                                                ( name = 'OTHERS'        value = 99 ) ).
+                  EXCEPTION-TABLE temp5.
                 lv_subrc = sy-subrc.
               CATCH cx_sy_dyn_call_illegal_type.
                 CONTINUE.
@@ -126,7 +184,8 @@ CLASS zabaputil_cl_bus_qm_insp_lot IMPLEMENTATION.
           zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = `BAPI_INSPLOT_SETUSAGEDECISION: LANGUAGE or RETURN has a type not handled here`
                                                             CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.

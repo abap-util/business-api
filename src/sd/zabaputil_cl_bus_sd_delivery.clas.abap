@@ -139,6 +139,10 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
     FIELD-SYMBOLS <deliveries> TYPE STANDARD TABLE.
     FIELD-SYMBOLS <row>        TYPE any.
     FIELD-SYMBOLS <field>      TYPE any.
+          DATA lx_call TYPE REF TO cx_root.
+              DATA temp1 LIKE sy-subrc.
+              DATA temp2 LIKE sy-subrc.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_vbeln, et_vbeln, er_created_items, ev_is_error, et_bapiret.
 
@@ -190,7 +194,8 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
         TRY.
             CALL FUNCTION 'BAPI_OUTB_DELIVERY_CREATE_SLS'
               PARAMETER-TABLE lt_param.
-          CATCH cx_sy_dyn_call_param_not_found cx_sy_dyn_call_illegal_type INTO DATA(lx_call).
+          
+          CATCH cx_sy_dyn_call_param_not_found cx_sy_dyn_call_illegal_type INTO lx_call.
             IF lr_deliveries IS BOUND.
               DELETE lt_param WHERE name = 'DELIVERIES' OR name = 'CREATED_ITEMS'.
               CLEAR: lr_deliveries, lr_created.
@@ -211,14 +216,21 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
             ASSIGN COMPONENT 'DELIV_NUMB' OF STRUCTURE <row> TO <field>.
             IF sy-subrc = 0 AND <field> IS NOT INITIAL.
               lv_vbeln = <field>.
-              IF NOT line_exists( et_vbeln[ table_line = lv_vbeln ] ).
+              
+              
+              temp2 = sy-subrc.
+              READ TABLE et_vbeln WITH KEY table_line = lv_vbeln TRANSPORTING NO FIELDS.
+              temp1 = sy-subrc.
+              sy-subrc = temp2.
+              IF NOT temp1 = 0.
                 INSERT lv_vbeln INTO TABLE et_vbeln.
               ENDIF.
             ENDIF.
           ENDLOOP.
           er_created_items = lr_created.
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -234,15 +246,22 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD read.
+      DATA temp3 TYPE string.
 
     CLEAR: es_likp, et_lips, ev_is_error, et_bapiret.
 
-    SELECT SINGLE * FROM likp INTO @es_likp WHERE vbeln = @iv_vbeln.
+    SELECT SINGLE * FROM likp INTO es_likp WHERE vbeln = iv_vbeln.
     IF sy-subrc <> 0.
-      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Delivery { iv_vbeln ALPHA = OUT } not found|
+      
+      CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
+        EXPORTING
+          input  = iv_vbeln
+        IMPORTING
+          output = temp3.
+zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Delivery { temp3 } not found|
                                                         CHANGING  ct_bapiret = et_bapiret ).
     ELSE.
-      SELECT * FROM lips INTO TABLE @et_lips WHERE vbeln = @iv_vbeln ORDER BY posnr.
+      SELECT * FROM lips INTO TABLE et_lips WHERE vbeln = iv_vbeln ORDER BY posnr.
     ENDIF.
 
     zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
@@ -255,40 +274,83 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
     DATA lt_item_data TYPE ty_t_item_chg.
     DATA lt_item_ctrl TYPE ty_t_item_ctrl.
     DATA ls_lips      TYPE lips.
+          DATA temp4 TYPE string.
+DATA temp1 TYPE string.
+          DATA temp5 TYPE string.
+          DATA temp6 TYPE zabaputil_cl_bus_sd_delivery=>ty_t_item_chg.
+          DATA temp7 LIKE LINE OF temp6.
+          DATA temp2 LIKE temp7-dlv_qty_imunit.
+          DATA temp8 TYPE zabaputil_cl_bus_sd_delivery=>ty_t_item_ctrl.
+          DATA temp9 LIKE LINE OF temp8.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
     TRY.
-        SELECT SINGLE * FROM lips INTO @ls_lips WHERE vbeln = @iv_vbeln AND posnr = @iv_posnr.
+        SELECT SINGLE * FROM lips INTO ls_lips WHERE vbeln = iv_vbeln AND posnr = iv_posnr.
         IF sy-subrc <> 0.
-          zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Delivery item { iv_vbeln ALPHA = OUT }/{ iv_posnr ALPHA = OUT } not found|
+          
+          CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
+            EXPORTING
+              input  = iv_vbeln
+            IMPORTING
+              output = temp4.
+
+CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
+  EXPORTING
+    input  = iv_posnr
+  IMPORTING
+    output = temp1.
+zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Delivery item { temp4 }/{ temp1 } not found|
                                                             CHANGING  ct_bapiret = et_bapiret ).
         ELSEIF iv_vrkme IS NOT INITIAL AND iv_vrkme <> ls_lips-vrkme.
           " UMVKZ/UMVKN convert the item's sales unit to the base unit - a
           " quantity in another unit would be posted wrong by the ratio of the
           " two units
-          zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Unit { iv_vrkme } is not the sales unit { ls_lips-vrkme } of delivery item { iv_posnr ALPHA = OUT }|
+          
+          CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
+            EXPORTING
+              input  = iv_posnr
+            IMPORTING
+              output = temp5.
+zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Unit { iv_vrkme } is not the sales unit { ls_lips-vrkme } of delivery item { temp5 }|
                                                             CHANGING  ct_bapiret = et_bapiret ).
         ELSE.
-          lt_item_data = VALUE #( ( deliv_numb      = iv_vbeln
-                                    deliv_item      = iv_posnr
-                                    dlv_qty         = iv_lfimg
-                                    dlv_qty_imunit  = COND #( WHEN ls_lips-umvkn = 0 THEN iv_lfimg
-                                                              ELSE iv_lfimg * ls_lips-umvkz / ls_lips-umvkn )
-                                    sales_unit      = iv_vrkme
-                                    base_uom        = ls_lips-meins
-                                    fact_unit_nom   = ls_lips-umvkz
-                                    fact_unit_denom = ls_lips-umvkn ) ).
-          lt_item_ctrl = VALUE #( ( deliv_numb = iv_vbeln
-                                    deliv_item = iv_posnr
-                                    chg_delqty = abap_true ) ).
+          
+          CLEAR temp6.
+          
+          temp7-deliv_numb = iv_vbeln.
+          temp7-deliv_item = iv_posnr.
+          temp7-dlv_qty = iv_lfimg.
+          
+          IF ls_lips-umvkn = 0.
+            temp2 = iv_lfimg.
+          ELSE.
+            temp2 = iv_lfimg * ls_lips-umvkz / ls_lips-umvkn.
+          ENDIF.
+          temp7-dlv_qty_imunit = temp2.
+          temp7-sales_unit = iv_vrkme.
+          temp7-base_uom = ls_lips-meins.
+          temp7-fact_unit_nom = ls_lips-umvkz.
+          temp7-fact_unit_denom = ls_lips-umvkn.
+          INSERT temp7 INTO TABLE temp6.
+          lt_item_data = temp6.
+          
+          CLEAR temp8.
+          
+          temp9-deliv_numb = iv_vbeln.
+          temp9-deliv_item = iv_posnr.
+          temp9-chg_delqty = abap_true.
+          INSERT temp9 INTO TABLE temp8.
+          lt_item_ctrl = temp8.
           call_change( EXPORTING iv_vbeln     = iv_vbeln
                                  iv_refresh   = iv_commit
                                  it_item_data = lt_item_data
                                  it_item_ctrl = lt_item_ctrl
                        CHANGING  ct_bapiret   = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -303,6 +365,7 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
 
     DATA ls_header  TYPE bapiobdlvhdrcon.
     DATA ls_control TYPE bapiobdlvhdrctrlcon.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -320,7 +383,8 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
             delivery       = iv_vbeln
           TABLES
             return         = et_bapiret.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -335,13 +399,21 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
 
     DATA lt_mesg  TYPE STANDARD TABLE OF mesg WITH DEFAULT KEY.
     DATA ls_likp  TYPE likp.
+          DATA temp10 TYPE string.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
     TRY.
-        SELECT SINGLE * FROM likp INTO @ls_likp WHERE vbeln = @iv_vbeln.
+        SELECT SINGLE * FROM likp INTO ls_likp WHERE vbeln = iv_vbeln.
         IF sy-subrc <> 0.
-          zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Delivery { iv_vbeln ALPHA = OUT } not found|
+          
+          CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
+            EXPORTING
+              input  = iv_vbeln
+            IMPORTING
+              output = temp10.
+zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Delivery { temp10 } not found|
                                                             CHANGING  ct_bapiret = et_bapiret ).
         ELSE.
           IF iv_commit = abap_true.
@@ -367,7 +439,8 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
           zabaputil_cl_bus_util_context=>bapi_msg_add_table( EXPORTING it_table   = lt_mesg
                                                              CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -382,21 +455,37 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
 
     DATA lt_item_data TYPE ty_t_item_chg.
     DATA lt_item_ctrl TYPE ty_t_item_ctrl.
+        DATA temp11 TYPE zabaputil_cl_bus_sd_delivery=>ty_t_item_chg.
+        DATA temp12 LIKE LINE OF temp11.
+        DATA temp13 TYPE zabaputil_cl_bus_sd_delivery=>ty_t_item_ctrl.
+        DATA temp14 LIKE LINE OF temp13.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
     TRY.
-        lt_item_data = VALUE #( ( deliv_numb = iv_vbeln
-                                  deliv_item = iv_posnr ) ).
-        lt_item_ctrl = VALUE #( ( deliv_numb = iv_vbeln
-                                  deliv_item = iv_posnr
-                                  del_item   = abap_true ) ).
+        
+        CLEAR temp11.
+        
+        temp12-deliv_numb = iv_vbeln.
+        temp12-deliv_item = iv_posnr.
+        INSERT temp12 INTO TABLE temp11.
+        lt_item_data = temp11.
+        
+        CLEAR temp13.
+        
+        temp14-deliv_numb = iv_vbeln.
+        temp14-deliv_item = iv_posnr.
+        temp14-del_item = abap_true.
+        INSERT temp14 INTO TABLE temp13.
+        lt_item_ctrl = temp13.
         call_change( EXPORTING iv_vbeln     = iv_vbeln
                                iv_refresh   = iv_commit
                                it_item_data = lt_item_data
                                it_item_ctrl = lt_item_ctrl
                      CHANGING  ct_bapiret   = et_bapiret ).
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -408,6 +497,7 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD delete.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -416,7 +506,8 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
                                iv_refresh = iv_commit
                                iv_delete  = abap_true
                      CHANGING  ct_bapiret = et_bapiret ).
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.

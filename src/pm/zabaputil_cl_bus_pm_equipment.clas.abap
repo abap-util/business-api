@@ -56,6 +56,7 @@ CLASS zabaputil_cl_bus_pm_equipment IMPLEMENTATION.
   METHOD create.
 
     DATA ls_return TYPE bapiret2.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_equnr, ev_is_error, et_bapiret.
 
@@ -71,7 +72,8 @@ CLASS zabaputil_cl_bus_pm_equipment IMPLEMENTATION.
             return          = ls_return.
         zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = ls_return
                                                               CHANGING  ct_bapiret = et_bapiret ).
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -85,6 +87,7 @@ CLASS zabaputil_cl_bus_pm_equipment IMPLEMENTATION.
   METHOD read.
 
     DATA ls_return TYPE bapiret2.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: es_general, es_specific, ev_is_error, et_bapiret.
 
@@ -98,7 +101,8 @@ CLASS zabaputil_cl_bus_pm_equipment IMPLEMENTATION.
             return            = ls_return.
         zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = ls_return
                                                               CHANGING  ct_bapiret = et_bapiret ).
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -111,6 +115,7 @@ CLASS zabaputil_cl_bus_pm_equipment IMPLEMENTATION.
   METHOD change.
 
     DATA ls_return TYPE bapiret2.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -127,7 +132,8 @@ CLASS zabaputil_cl_bus_pm_equipment IMPLEMENTATION.
             return         = ls_return.
         zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = ls_return
                                                               CHANGING  ct_bapiret = et_bapiret ).
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.

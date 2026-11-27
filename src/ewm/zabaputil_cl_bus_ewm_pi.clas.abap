@@ -35,6 +35,11 @@ CLASS zabaputil_cl_bus_ewm_pi IMPLEMENTATION.
     DATA lr_item   TYPE REF TO data.
     DATA lt_return TYPE bapirettab.
     DATA lv_sim    TYPE abap_bool.
+        DATA temp1 LIKE REF TO lt_return.
+DATA temp2 LIKE REF TO lv_sim.
+DATA temp3 TYPE abap_func_parmbind_tab.
+DATA temp4 LIKE LINE OF temp3.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -44,15 +49,36 @@ CLASS zabaputil_cl_bus_ewm_pi IMPLEMENTATION.
         GET REFERENCE OF is_head INTO lr_head.
         GET REFERENCE OF it_item INTO lr_item.
 
-        zabaputil_cl_bus_util_context=>bapi_call_function(
+        
+        GET REFERENCE OF lt_return INTO temp1.
+
+GET REFERENCE OF lv_sim INTO temp2.
+
+CLEAR temp3.
+
+temp4-name = 'IS_HEAD'.
+temp4-kind = abap_func_exporting.
+temp4-value = lr_head.
+INSERT temp4 INTO TABLE temp3.
+temp4-name = 'IT_ITEM'.
+temp4-kind = abap_func_exporting.
+temp4-value = lr_item.
+INSERT temp4 INTO TABLE temp3.
+temp4-name = 'I_SIM_MODE'.
+temp4-kind = abap_func_exporting.
+temp4-value = temp2.
+INSERT temp4 INTO TABLE temp3.
+temp4-name = 'ET_BAPIRET'.
+temp4-kind = abap_func_importing.
+temp4-value = temp1.
+INSERT temp4 INTO TABLE temp3.
+zabaputil_cl_bus_util_context=>bapi_call_function(
                             EXPORTING iv_name    = '/SCWM/PI_CALL_DOCUMENT_COUNT'
-                                      it_param   = VALUE #( ( name = 'IS_HEAD'    kind = abap_func_exporting value = lr_head )
-                                                            ( name = 'IT_ITEM'    kind = abap_func_exporting value = lr_item )
-                                                            ( name = 'I_SIM_MODE' kind = abap_func_exporting value = REF #( lv_sim ) )
-                                                            ( name = 'ET_BAPIRET' kind = abap_func_importing value = REF #( lt_return ) ) )
+                                      it_param   = temp3
                             CHANGING  ct_bapiret = et_bapiret ).
         INSERT LINES OF lt_return INTO TABLE et_bapiret.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.

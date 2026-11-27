@@ -45,7 +45,7 @@ CLASS zabaputil_cl_bus_sd_serial IMPLEMENTATION.
 
     CLEAR: es_equi, ev_is_error, et_bapiret.
 
-    SELECT SINGLE * FROM equi INTO @es_equi WHERE matnr = @iv_matnr AND sernr = @iv_sernr ##WARN_OK.
+    SELECT SINGLE * FROM equi INTO es_equi WHERE matnr = iv_matnr AND sernr = iv_sernr ##WARN_OK.
     IF sy-subrc <> 0.
       zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Serial number { iv_sernr } of material { iv_matnr } not found|
                                                         CHANGING  ct_bapiret = et_bapiret ).
@@ -61,17 +61,17 @@ CLASS zabaputil_cl_bus_sd_serial IMPLEMENTATION.
     CLEAR: et_serial, ev_is_error, et_bapiret.
 
     IF iv_posnr IS INITIAL.
-      SELECT ser01~posnr, objk~matnr, objk~sernr
-        FROM ser01 INNER JOIN objk ON objk~obknr = ser01~obknr
-        WHERE ser01~lief_nr = @iv_vbeln
-        ORDER BY ser01~posnr, objk~sernr
-        INTO TABLE @et_serial.
+      SELECT ser01~posnr objk~matnr objk~sernr
+        FROM ser01 INNER JOIN objk ON objk~obknr = ser01~obknr INTO TABLE et_serial
+        WHERE ser01~lief_nr = iv_vbeln
+        ORDER BY ser01~posnr objk~sernr
+        .
     ELSE.
-      SELECT ser01~posnr, objk~matnr, objk~sernr
-        FROM ser01 INNER JOIN objk ON objk~obknr = ser01~obknr
-        WHERE ser01~lief_nr = @iv_vbeln AND ser01~posnr = @iv_posnr
-        ORDER BY ser01~posnr, objk~sernr
-        INTO TABLE @et_serial.
+      SELECT ser01~posnr objk~matnr objk~sernr
+        FROM ser01 INNER JOIN objk ON objk~obknr = ser01~obknr INTO TABLE et_serial
+        WHERE ser01~lief_nr = iv_vbeln AND ser01~posnr = iv_posnr
+        ORDER BY ser01~posnr objk~sernr
+        .
     ENDIF.
 
     zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret

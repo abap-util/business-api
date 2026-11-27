@@ -62,6 +62,7 @@ CLASS zabaputil_cl_bus_mm_inventory IMPLEMENTATION.
 
     DATA lt_item TYPE ty_t_create_item.
     DATA ls_head TYPE bapi_physinv_create_head.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_iblnr, ev_gjahr, ev_is_error, et_bapiret.
 
@@ -77,7 +78,8 @@ CLASS zabaputil_cl_bus_mm_inventory IMPLEMENTATION.
           TABLES
             items         = lt_item
             return        = et_bapiret.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -95,6 +97,7 @@ CLASS zabaputil_cl_bus_mm_inventory IMPLEMENTATION.
   METHOD count.
 
     DATA lt_item TYPE ty_t_count_item.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -108,7 +111,8 @@ CLASS zabaputil_cl_bus_mm_inventory IMPLEMENTATION.
           TABLES
             items         = lt_item
             return        = et_bapiret.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -120,6 +124,8 @@ CLASS zabaputil_cl_bus_mm_inventory IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD post_differences.
+        DATA lx_error TYPE REF TO cx_root.
+      DATA temp1 LIKE ev_mjahr.
 
     CLEAR: ev_mblnr, ev_mjahr, ev_is_error, et_bapiret.
 
@@ -133,7 +139,8 @@ CLASS zabaputil_cl_bus_mm_inventory IMPLEMENTATION.
             materialdocument = ev_mblnr
           TABLES
             return           = et_bapiret.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -143,7 +150,13 @@ CLASS zabaputil_cl_bus_mm_inventory IMPLEMENTATION.
                                                         CHANGING  ct_bapiret = et_bapiret ).
     ELSEIF ev_mblnr IS NOT INITIAL.
       " a material document is numbered in the year of its posting date
-      ev_mjahr = COND #( WHEN iv_budat IS INITIAL THEN sy-datum(4) ELSE iv_budat(4) ).
+      
+      IF iv_budat IS INITIAL.
+        temp1 = sy-datum(4).
+      ELSE.
+        temp1 = iv_budat(4).
+      ENDIF.
+      ev_mjahr = temp1.
     ENDIF.
     zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
                                                 CHANGING  ct_bapiret  = et_bapiret

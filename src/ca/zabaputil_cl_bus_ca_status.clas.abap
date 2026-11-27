@@ -52,6 +52,7 @@ CLASS zabaputil_cl_bus_ca_status IMPLEMENTATION.
 
     DATA lv_line      TYPE c LENGTH 40.
     DATA lv_user_line TYPE c LENGTH 40.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: et_status, ev_text_system, ev_text_user, ev_is_error, et_bapiret.
 
@@ -87,7 +88,8 @@ CLASS zabaputil_cl_bus_ca_status IMPLEMENTATION.
             ev_text_user   = lv_user_line.
           ENDIF.
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -100,14 +102,18 @@ CLASS zabaputil_cl_bus_ca_status IMPLEMENTATION.
   METHOD check_is_set.
 
     DATA lv_objnr TYPE j_objnr.
+    DATA temp1 TYPE xsdboolean.
 
-    SELECT SINGLE objnr FROM jest INTO @lv_objnr
-      WHERE objnr = @iv_objnr AND stat = @iv_stat AND inact = @space.
-    rv_result = xsdbool( sy-subrc = 0 ).
+    SELECT SINGLE objnr FROM jest INTO lv_objnr
+      WHERE objnr = iv_objnr AND stat = iv_stat AND inact = space.
+    
+    temp1 = boolc( sy-subrc = 0 ).
+    rv_result = temp1.
 
   ENDMETHOD.
 
   METHOD set_user_status.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -136,7 +142,8 @@ CLASS zabaputil_cl_bus_ca_status IMPLEMENTATION.
                                                             CHANGING  ct_bapiret = et_bapiret ).
           ENDIF.
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.

@@ -66,6 +66,7 @@ CLASS zabaputil_cl_bus_qm_notif IMPLEMENTATION.
 
     DATA ls_header_e TYPE bapi2078_nothdre.
     DATA lt_item     TYPE ty_t_item.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_qmnum, ev_is_error, et_bapiret.
 
@@ -85,7 +86,8 @@ CLASS zabaputil_cl_bus_qm_notif IMPLEMENTATION.
                 IMPORTING ev_qmnum   = ev_qmnum
                 CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -101,6 +103,7 @@ CLASS zabaputil_cl_bus_qm_notif IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD read.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: es_header, et_item, et_task, ev_is_error, et_bapiret.
 
@@ -114,7 +117,8 @@ CLASS zabaputil_cl_bus_qm_notif IMPLEMENTATION.
             notitem            = et_item
             notiftask          = et_task
             return             = et_bapiret.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -128,6 +132,7 @@ CLASS zabaputil_cl_bus_qm_notif IMPLEMENTATION.
 
     DATA lt_item  TYPE ty_t_item.
     DATA lv_qmnum TYPE qmnum.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -144,7 +149,8 @@ CLASS zabaputil_cl_bus_qm_notif IMPLEMENTATION.
                 IMPORTING ev_qmnum   = lv_qmnum
                 CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -159,6 +165,7 @@ CLASS zabaputil_cl_bus_qm_notif IMPLEMENTATION.
 
     DATA lt_return TYPE bapirettab.
     DATA ls_header TYPE bapi2078_nothdre.
+    DATA temp1 LIKE ev_qmnum.
 
     CLEAR ev_qmnum.
     CALL FUNCTION 'BAPI_QUALNOT_SAVE'
@@ -169,7 +176,13 @@ CLASS zabaputil_cl_bus_qm_notif IMPLEMENTATION.
       TABLES
         return      = lt_return.
     INSERT LINES OF lt_return INTO TABLE ct_bapiret.
-    ev_qmnum = COND #( WHEN ls_header-notif_no IS NOT INITIAL THEN ls_header-notif_no ELSE iv_qmnum ).
+    
+    IF ls_header-notif_no IS NOT INITIAL.
+      temp1 = ls_header-notif_no.
+    ELSE.
+      temp1 = iv_qmnum.
+    ENDIF.
+    ev_qmnum = temp1.
 
   ENDMETHOD.
 

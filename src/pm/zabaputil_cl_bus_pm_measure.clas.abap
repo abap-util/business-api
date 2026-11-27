@@ -45,6 +45,7 @@ CLASS zabaputil_cl_bus_pm_measure IMPLEMENTATION.
     DATA lv_unit   TYPE c LENGTH 3.
     DATA lv_text   TYPE c LENGTH 40.
     DATA lv_reader TYPE c LENGTH 12.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_mdocm, ev_is_error, et_bapiret.
 
@@ -76,7 +77,8 @@ CLASS zabaputil_cl_bus_pm_measure IMPLEMENTATION.
           zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'MEASUREM_DOCUM_RFC_SINGLE_001'
                                                           CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -90,16 +92,23 @@ CLASS zabaputil_cl_bus_pm_measure IMPLEMENTATION.
   METHOD read_last.
 
     DATA lt_imrg TYPE STANDARD TABLE OF imrg WITH DEFAULT KEY.
+      DATA temp1 TYPE string.
 
-    SELECT * FROM imrg
-      WHERE point = @iv_point AND cancl = @space
-      ORDER BY idate DESCENDING, itime DESCENDING
-      INTO TABLE @lt_imrg
-      UP TO 1 ROWS.
+    SELECT * FROM imrg UP TO 1 ROWS INTO TABLE lt_imrg
+      WHERE point = iv_point AND cancl = space
+      ORDER BY idate DESCENDING itime DESCENDING
+      
+      .
     CLEAR: es_imrg, ev_is_error, et_bapiret.
     READ TABLE lt_imrg INTO es_imrg INDEX 1.
     IF sy-subrc <> 0.
-      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |No measurement document for measuring point { iv_point ALPHA = OUT }|
+      
+      CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
+        EXPORTING
+          input  = iv_point
+        IMPORTING
+          output = temp1.
+zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |No measurement document for measuring point { temp1 }|
                                                         CHANGING  ct_bapiret = et_bapiret ).
     ENDIF.
 

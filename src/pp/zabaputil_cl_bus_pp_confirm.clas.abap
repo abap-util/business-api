@@ -60,6 +60,7 @@ CLASS zabaputil_cl_bus_pp_confirm IMPLEMENTATION.
 
     DATA ls_return TYPE bapiret2.
     DATA lt_detail TYPE STANDARD TABLE OF bapi_coru_return WITH DEFAULT KEY.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: et_timeticket, et_goodsmovement, et_link, ev_is_error, et_bapiret.
 
@@ -77,7 +78,8 @@ CLASS zabaputil_cl_bus_pp_confirm IMPLEMENTATION.
                                                               CHANGING  ct_bapiret = et_bapiret ).
         zabaputil_cl_bus_util_context=>bapi_msg_add_table( EXPORTING it_table   = lt_detail
                                                            CHANGING  ct_bapiret = et_bapiret ).
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -94,6 +96,7 @@ CLASS zabaputil_cl_bus_pp_confirm IMPLEMENTATION.
     DATA lt_timeticket    TYPE ty_t_timeticket.
     DATA lt_goodsmovement TYPE ty_t_goodsmovement.
     DATA lt_link          TYPE ty_t_link.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: et_detail_return, ev_is_error, et_bapiret.
 
@@ -114,7 +117,8 @@ CLASS zabaputil_cl_bus_pp_confirm IMPLEMENTATION.
                                                               CHANGING  ct_bapiret = et_bapiret ).
         zabaputil_cl_bus_util_context=>bapi_msg_add_table( EXPORTING it_table   = lt_detail
                                                            CHANGING  ct_bapiret = et_bapiret ).
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -128,6 +132,7 @@ CLASS zabaputil_cl_bus_pp_confirm IMPLEMENTATION.
   METHOD cancel.
 
     DATA ls_return TYPE bapiret2.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -141,7 +146,8 @@ CLASS zabaputil_cl_bus_pp_confirm IMPLEMENTATION.
             return              = ls_return.
         zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = ls_return
                                                               CHANGING  ct_bapiret = et_bapiret ).
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.

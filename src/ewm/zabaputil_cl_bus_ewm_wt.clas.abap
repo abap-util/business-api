@@ -201,6 +201,11 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
     FIELD-SYMBOLS <table> TYPE STANDARD TABLE.
     FIELD-SYMBOLS <row>   TYPE any.
     FIELD-SYMBOLS <field> TYPE any.
+          DATA temp1 LIKE REF TO lt_return.
+DATA temp2 LIKE REF TO lv_false.
+DATA temp3 TYPE abap_func_parmbind_tab.
+DATA temp4 LIKE LINE OF temp3.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_tanum, ev_is_error, et_bapiret.
 
@@ -222,19 +227,43 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
           tm_set_lgnum( lr_lgnum ).
           CREATE DATA lr_tanum TYPE ('/SCWM/TANUM').
 
-          zabaputil_cl_bus_util_context=>bapi_call_function(
+          
+          GET REFERENCE OF lt_return INTO temp1.
+
+GET REFERENCE OF lv_false INTO temp2.
+
+CLEAR temp3.
+
+temp4-name = 'IV_LGNUM'.
+temp4-kind = abap_func_exporting.
+temp4-value = lr_lgnum.
+INSERT temp4 INTO TABLE temp3.
+temp4-name = 'IV_COMMIT_WORK'.
+temp4-kind = abap_func_exporting.
+temp4-value = temp2.
+INSERT temp4 INTO TABLE temp3.
+temp4-name = 'IT_CREATE_HU'.
+temp4-kind = abap_func_exporting.
+temp4-value = lr_table.
+INSERT temp4 INTO TABLE temp3.
+temp4-name = 'EV_TANUM'.
+temp4-kind = abap_func_importing.
+temp4-value = lr_tanum.
+INSERT temp4 INTO TABLE temp3.
+temp4-name = 'ET_BAPIRET'.
+temp4-kind = abap_func_importing.
+temp4-value = temp1.
+INSERT temp4 INTO TABLE temp3.
+zabaputil_cl_bus_util_context=>bapi_call_function(
                               EXPORTING iv_name    = '/SCWM/TO_CREATE_MOVE_HU'
-                                        it_param   = VALUE #( ( name = 'IV_LGNUM'       kind = abap_func_exporting value = lr_lgnum )
-                                                              ( name = 'IV_COMMIT_WORK' kind = abap_func_exporting value = REF #( lv_false ) )
-                                                              ( name = 'IT_CREATE_HU'   kind = abap_func_exporting value = lr_table )
-                                                              ( name = 'EV_TANUM'       kind = abap_func_importing value = lr_tanum )
-                                                              ( name = 'ET_BAPIRET'     kind = abap_func_importing value = REF #( lt_return ) ) )
+                                        it_param   = temp3
                               CHANGING  ct_bapiret = et_bapiret ).
           INSERT LINES OF lt_return INTO TABLE et_bapiret.
           ASSIGN lr_tanum->* TO <field>.
           ev_tanum = <field>.
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -271,6 +300,7 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
     DATA lv_matid TYPE zabaputil_cl_bus_ewm_stock=>ty_matid.
     FIELD-SYMBOLS <table> TYPE STANDARD TABLE.
     FIELD-SYMBOLS <row>   TYPE any.
+          DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_tanum, ev_is_error, et_bapiret.
 
@@ -307,7 +337,8 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
                             IMPORTING ev_tanum      = ev_tanum
                             CHANGING  ct_bapiret    = et_bapiret ).
           ENDIF.
-        CATCH cx_root INTO DATA(lx_error).
+          
+        CATCH cx_root INTO lx_error.
           zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                  CHANGING  ct_bapiret = et_bapiret ).
       ENDTRY.
@@ -341,6 +372,7 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
     DATA lv_lgnum TYPE c LENGTH 4.
     DATA lv_tanum TYPE c LENGTH 12.
     FIELD-SYMBOLS <task> TYPE any.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: er_task, ev_is_open, ev_is_error, et_bapiret.
 
@@ -352,21 +384,22 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
         lv_table = '/SCWM/ORDIM_O'.
         CREATE DATA er_task TYPE (lv_table).
         ASSIGN er_task->* TO <task>.
-        SELECT SINGLE * FROM (lv_table) INTO @<task> WHERE lgnum = @lv_lgnum AND tanum = @lv_tanum.
+        SELECT SINGLE * FROM (lv_table) INTO <task> WHERE lgnum = lv_lgnum AND tanum = lv_tanum.
         IF sy-subrc = 0.
           ev_is_open = abap_true.
         ELSE.
           lv_table = '/SCWM/ORDIM_C'.
           CREATE DATA er_task TYPE (lv_table).
           ASSIGN er_task->* TO <task>.
-          SELECT SINGLE * FROM (lv_table) INTO @<task> WHERE lgnum = @lv_lgnum AND tanum = @lv_tanum.
+          SELECT SINGLE * FROM (lv_table) INTO <task> WHERE lgnum = lv_lgnum AND tanum = lv_tanum.
           IF sy-subrc <> 0.
             CLEAR er_task.
             zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Warehouse task { iv_lgnum }/{ iv_tanum } not found|
                                                               CHANGING  ct_bapiret = et_bapiret ).
           ENDIF.
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         CLEAR er_task.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
@@ -422,6 +455,11 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
     FIELD-SYMBOLS <table> TYPE STANDARD TABLE.
     FIELD-SYMBOLS <row>   TYPE any.
     FIELD-SYMBOLS <field> TYPE any.
+          DATA temp2 LIKE REF TO lt_return.
+DATA temp3 LIKE REF TO lv_false.
+DATA temp5 TYPE abap_func_parmbind_tab.
+DATA temp6 LIKE LINE OF temp5.
+        DATA lx_error TYPE REF TO cx_root.
 
     TRY.
         lv_type = iv_table_type.
@@ -441,16 +479,37 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
           lr_lgnum = lgnum_ref( iv_lgnum ).
           tm_set_lgnum( lr_lgnum ).
 
-          zabaputil_cl_bus_util_context=>bapi_call_function(
+          
+          GET REFERENCE OF lt_return INTO temp2.
+
+GET REFERENCE OF lv_false INTO temp3.
+
+CLEAR temp5.
+
+temp6-name = 'IV_LGNUM'.
+temp6-kind = abap_func_exporting.
+temp6-value = lr_lgnum.
+INSERT temp6 INTO TABLE temp5.
+temp6-name = 'IV_COMMIT_WORK'.
+temp6-kind = abap_func_exporting.
+temp6-value = temp3.
+INSERT temp6 INTO TABLE temp5.
+temp6-name = to_upper( iv_table_name ).
+temp6-kind = abap_func_exporting.
+temp6-value = lr_table.
+INSERT temp6 INTO TABLE temp5.
+temp6-name = 'ET_BAPIRET'.
+temp6-kind = abap_func_importing.
+temp6-value = temp2.
+INSERT temp6 INTO TABLE temp5.
+zabaputil_cl_bus_util_context=>bapi_call_function(
                               EXPORTING iv_name    = iv_function
-                                        it_param   = VALUE #( ( name = 'IV_LGNUM'       kind = abap_func_exporting value = lr_lgnum )
-                                                              ( name = 'IV_COMMIT_WORK' kind = abap_func_exporting value = REF #( lv_false ) )
-                                                              ( name = to_upper( iv_table_name ) kind = abap_func_exporting value = lr_table )
-                                                              ( name = 'ET_BAPIRET'     kind = abap_func_importing value = REF #( lt_return ) ) )
+                                        it_param   = temp5
                               CHANGING  ct_bapiret = ct_bapiret ).
           INSERT LINES OF lt_return INTO TABLE ct_bapiret.
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = ct_bapiret ).
     ENDTRY.
@@ -469,6 +528,9 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
     DATA lv_called TYPE abap_bool.
     DATA lv_name   TYPE string.
     FIELD-SYMBOLS <field> TYPE any.
+              DATA temp3 TYPE abap_func_excpbind_tab.
+              DATA temp4 LIKE LINE OF temp3.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_tanum, er_ltap_vb.
 
@@ -512,10 +574,18 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
               ls_param-value = er_ltap_vb.
               INSERT ls_param INTO TABLE lt_param.
               lv_name = to_upper( iv_function ).
+              
+              CLEAR temp3.
+              
+              temp4-name = 'ERROR_MESSAGE'.
+              temp4-value = 98.
+              INSERT temp4 INTO TABLE temp3.
+              temp4-name = 'OTHERS'.
+              temp4-value = 99.
+              INSERT temp4 INTO TABLE temp3.
               CALL FUNCTION lv_name
                 PARAMETER-TABLE lt_param
-                EXCEPTION-TABLE VALUE abap_func_excpbind_tab( ( name = 'ERROR_MESSAGE' value = 98 )
-                                                              ( name = 'OTHERS'        value = 99 ) ).
+                EXCEPTION-TABLE temp3.
               IF sy-subrc <> 0.
                 zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = lv_name
                                                                 CHANGING  ct_bapiret = ct_bapiret ).
@@ -537,7 +607,8 @@ CLASS zabaputil_cl_bus_ewm_wt IMPLEMENTATION.
           ASSIGN lr_tanum->* TO <field>.
           ev_tanum = <field>.
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = ct_bapiret ).
     ENDTRY.

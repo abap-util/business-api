@@ -32,6 +32,7 @@ CLASS zabaputil_cl_bus_ewm_resource IMPLEMENTATION.
     DATA lv_lgnum TYPE c LENGTH 4.
     DATA lv_rsrc  TYPE c LENGTH 18.
     FIELD-SYMBOLS <resource> TYPE any.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: er_resource, ev_is_error, et_bapiret.
 
@@ -41,13 +42,14 @@ CLASS zabaputil_cl_bus_ewm_resource IMPLEMENTATION.
     TRY.
         CREATE DATA er_resource TYPE (lv_table).
         ASSIGN er_resource->* TO <resource>.
-        SELECT SINGLE * FROM (lv_table) INTO @<resource> WHERE lgnum = @lv_lgnum AND rsrc = @lv_rsrc.
+        SELECT SINGLE * FROM (lv_table) INTO <resource> WHERE lgnum = lv_lgnum AND rsrc = lv_rsrc.
         IF sy-subrc <> 0.
           CLEAR er_resource.
           zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Resource { iv_rsrc } not found in warehouse { iv_lgnum }|
                                                             CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         CLEAR er_resource.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).

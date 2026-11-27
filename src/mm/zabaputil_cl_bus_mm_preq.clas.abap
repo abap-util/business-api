@@ -40,6 +40,7 @@ ENDCLASS.
 CLASS zabaputil_cl_bus_mm_preq IMPLEMENTATION.
 
   METHOD release.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_rel_status_new, ev_is_error, et_bapiret.
 
@@ -63,7 +64,8 @@ CLASS zabaputil_cl_bus_mm_preq IMPLEMENTATION.
           zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'BAPI_REQUISITION_RELEASE'
                                                           CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -75,6 +77,7 @@ CLASS zabaputil_cl_bus_mm_preq IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD reset_release.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_rel_status_new, ev_is_error, et_bapiret.
 
@@ -97,7 +100,8 @@ CLASS zabaputil_cl_bus_mm_preq IMPLEMENTATION.
           zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'BAPI_REQUISITION_RESET_RELEASE'
                                                           CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.

@@ -79,6 +79,7 @@ CLASS zabaputil_cl_bus_ewm_hu IMPLEMENTATION.
     DATA lv_false   TYPE abap_bool VALUE abap_false.
     FIELD-SYMBOLS <header> TYPE any.
     FIELD-SYMBOLS <field>  TYPE any.
+          DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_huident, er_header, ev_is_error, et_bapiret.
 
@@ -144,7 +145,8 @@ CLASS zabaputil_cl_bus_ewm_hu IMPLEMENTATION.
               ENDIF.
             ENDIF.
           ENDIF.
-        CATCH cx_root INTO DATA(lx_error).
+          
+        CATCH cx_root INTO lx_error.
           zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                  CHANGING  ct_bapiret = et_bapiret ).
       ENDTRY.
@@ -170,6 +172,7 @@ CLASS zabaputil_cl_bus_ewm_hu IMPLEMENTATION.
     DATA lv_lgnum   TYPE c LENGTH 4.
     DATA lv_huident TYPE c LENGTH 20.
     FIELD-SYMBOLS <header> TYPE any.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: er_header, ev_is_error, et_bapiret.
 
@@ -180,13 +183,14 @@ CLASS zabaputil_cl_bus_ewm_hu IMPLEMENTATION.
     TRY.
         CREATE DATA er_header TYPE (lv_table).
         ASSIGN er_header->* TO <header>.
-        SELECT SINGLE * FROM (lv_table) INTO @<header> WHERE lgnum = @lv_lgnum AND huident = @lv_huident ##WARN_OK.
+        SELECT SINGLE * FROM (lv_table) INTO <header> WHERE lgnum = lv_lgnum AND huident = lv_huident ##WARN_OK.
         IF sy-subrc <> 0.
           CLEAR er_header.
           zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Handling unit { iv_huident } not found in warehouse { iv_lgnum }|
                                                             CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         CLEAR er_header.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
@@ -203,6 +207,7 @@ CLASS zabaputil_cl_bus_ewm_hu IMPLEMENTATION.
     DATA lv_lgnum TYPE c LENGTH 4.
     DATA lv_lgpla TYPE c LENGTH 18.
     FIELD-SYMBOLS <headers> TYPE STANDARD TABLE.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: er_headers, ev_is_error, et_bapiret.
 
@@ -212,8 +217,9 @@ CLASS zabaputil_cl_bus_ewm_hu IMPLEMENTATION.
     TRY.
         CREATE DATA er_headers TYPE STANDARD TABLE OF (lv_table).
         ASSIGN er_headers->* TO <headers>.
-        SELECT * FROM (lv_table) INTO TABLE @<headers> WHERE lgnum = @lv_lgnum AND lgpla = @lv_lgpla.
-      CATCH cx_root INTO DATA(lx_error).
+        SELECT * FROM (lv_table) INTO TABLE <headers> WHERE lgnum = lv_lgnum AND lgpla = lv_lgpla.
+        
+      CATCH cx_root INTO lx_error.
         CLEAR er_headers.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).

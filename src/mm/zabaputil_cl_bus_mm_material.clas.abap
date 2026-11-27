@@ -77,12 +77,12 @@ CLASS zabaputil_cl_bus_mm_material IMPLEMENTATION.
 
     CLEAR: es_mara, es_marc, ev_is_error, et_bapiret.
 
-    SELECT SINGLE * FROM mara INTO @es_mara WHERE matnr = @iv_matnr.
+    SELECT SINGLE * FROM mara INTO es_mara WHERE matnr = iv_matnr.
     IF sy-subrc <> 0.
       zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Material { iv_matnr } not found|
                                                         CHANGING  ct_bapiret = et_bapiret ).
     ELSEIF iv_werks IS NOT INITIAL.
-      SELECT SINGLE * FROM marc INTO @es_marc WHERE matnr = @iv_matnr AND werks = @iv_werks.
+      SELECT SINGLE * FROM marc INTO es_marc WHERE matnr = iv_matnr AND werks = iv_werks.
       IF sy-subrc <> 0.
         zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Material { iv_matnr } not found in plant { iv_werks }|
                                                           CHANGING  ct_bapiret = et_bapiret ).
@@ -99,6 +99,7 @@ CLASS zabaputil_cl_bus_mm_material IMPLEMENTATION.
     DATA ls_headdata TYPE bapimathead.
     DATA ls_return   TYPE bapiret2.
     DATA lt_messages TYPE STANDARD TABLE OF bapi_matreturn2 WITH DEFAULT KEY.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -123,7 +124,8 @@ CLASS zabaputil_cl_bus_mm_material IMPLEMENTATION.
           zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = ls_return
                                                                 CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.

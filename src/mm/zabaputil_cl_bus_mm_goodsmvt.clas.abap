@@ -192,6 +192,7 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
     DATA ls_header TYPE bapi2017_gm_head_01.
     DATA ls_code   TYPE bapi2017_gm_code.
     DATA lt_item   TYPE ty_t_item.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_mblnr, ev_mjahr, ev_is_error, et_bapiret.
 
@@ -215,7 +216,8 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
           TABLES
             goodsmvt_item    = lt_item
             return           = et_bapiret.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -336,12 +338,26 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
 
     DATA ls_resb TYPE resb.
     FIELD-SYMBOLS <umcha> TYPE any.
+      DATA temp1 TYPE string.
+DATA temp2 TYPE string.
 
     CLEAR: ev_mblnr, ev_mjahr, ev_is_error, et_bapiret.
 
-    SELECT SINGLE * FROM resb INTO @ls_resb WHERE rsnum = @iv_rsnum AND rspos = @iv_rspos ##WARN_OK.
+    SELECT SINGLE * FROM resb INTO ls_resb WHERE rsnum = iv_rsnum AND rspos = iv_rspos ##WARN_OK.
     IF sy-subrc <> 0.
-      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Reservation item { iv_rsnum ALPHA = OUT }/{ iv_rspos ALPHA = OUT } not found|
+      
+      CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
+        EXPORTING
+          input  = iv_rsnum
+        IMPORTING
+          output = temp1.
+
+CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
+  EXPORTING
+    input  = iv_rspos
+  IMPORTING
+    output = temp2.
+zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Reservation item { temp1 }/{ temp2 } not found|
                                                         CHANGING  ct_bapiret = et_bapiret ).
       zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
                                                            cv_is_error = ev_is_error ).
@@ -422,6 +438,7 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
   METHOD cancel.
 
     DATA ls_headret TYPE bapi2017_gm_head_ret.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_mblnr_cancel, ev_mjahr_cancel, ev_is_error, et_bapiret.
 
@@ -437,7 +454,8 @@ CLASS zabaputil_cl_bus_mm_goodsmvt IMPLEMENTATION.
             return              = et_bapiret.
         ev_mblnr_cancel = ls_headret-mat_doc.
         ev_mjahr_cancel = ls_headret-doc_year.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.

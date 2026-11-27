@@ -103,6 +103,7 @@ CLASS zabaputil_cl_bus_sd_order IMPLEMENTATION.
     DATA lt_partner  TYPE ty_t_partner.
     DATA lt_item     TYPE ty_t_item.
     DATA lt_schedule TYPE ty_t_schedule.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_vbeln, ev_is_error, et_bapiret.
 
@@ -120,7 +121,8 @@ CLASS zabaputil_cl_bus_sd_order IMPLEMENTATION.
             order_items_in     = lt_item
             order_partners     = lt_partner
             order_schedules_in = lt_schedule.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -136,15 +138,22 @@ CLASS zabaputil_cl_bus_sd_order IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD read.
+      DATA temp1 TYPE string.
 
     CLEAR: es_vbak, et_vbap, ev_is_error, et_bapiret.
 
-    SELECT SINGLE * FROM vbak INTO @es_vbak WHERE vbeln = @iv_vbeln.
+    SELECT SINGLE * FROM vbak INTO es_vbak WHERE vbeln = iv_vbeln.
     IF sy-subrc <> 0.
-      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Sales order { iv_vbeln ALPHA = OUT } not found|
+      
+      CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
+        EXPORTING
+          input  = iv_vbeln
+        IMPORTING
+          output = temp1.
+zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Sales order { temp1 } not found|
                                                         CHANGING  ct_bapiret = et_bapiret ).
     ELSE.
-      SELECT * FROM vbap INTO TABLE @et_vbap WHERE vbeln = @iv_vbeln ORDER BY posnr.
+      SELECT * FROM vbap INTO TABLE et_vbap WHERE vbeln = iv_vbeln ORDER BY posnr.
     ENDIF.
 
     zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
@@ -159,6 +168,7 @@ CLASS zabaputil_cl_bus_sd_order IMPLEMENTATION.
     DATA lt_itemx     TYPE ty_t_itemx.
     DATA lt_schedule  TYPE ty_t_schedule.
     DATA lt_schedulex TYPE ty_t_schedulex.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -182,7 +192,8 @@ CLASS zabaputil_cl_bus_sd_order IMPLEMENTATION.
             order_item_inx   = lt_itemx
             schedule_lines   = lt_schedule
             schedule_linesx  = lt_schedulex.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -206,13 +217,20 @@ CLASS zabaputil_cl_bus_sd_order IMPLEMENTATION.
     DATA lt_schedule  TYPE ty_t_schedule.
     DATA lt_schedulex TYPE ty_t_schedulex.
     DATA lv_vrkme     TYPE vrkme.
+        DATA temp2 TYPE string.
 
     CLEAR: ev_is_error, et_bapiret.
 
     IF iv_vrkme IS NOT INITIAL.
-      SELECT SINGLE vrkme FROM vbap INTO @lv_vrkme WHERE vbeln = @iv_vbeln AND posnr = @iv_posnr.
+      SELECT SINGLE vrkme FROM vbap INTO lv_vrkme WHERE vbeln = iv_vbeln AND posnr = iv_posnr.
       IF sy-subrc = 0 AND lv_vrkme <> iv_vrkme.
-        zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Unit { iv_vrkme } is not the sales unit { lv_vrkme } of item { iv_posnr ALPHA = OUT }|
+        
+        CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
+          EXPORTING
+            input  = iv_posnr
+          IMPORTING
+            output = temp2.
+zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Unit { iv_vrkme } is not the sales unit { lv_vrkme } of item { temp2 }|
                                                           CHANGING  ct_bapiret = et_bapiret ).
         zabaputil_cl_bus_util_context=>bapi_finish( EXPORTING iv_commit   = iv_commit
                                                     CHANGING  ct_bapiret  = et_bapiret
@@ -221,11 +239,11 @@ CLASS zabaputil_cl_bus_sd_order IMPLEMENTATION.
       ENDIF.
     ENDIF.
 
-    SELECT etenr FROM vbep
-      WHERE vbeln = @iv_vbeln AND posnr = @iv_posnr
+    SELECT etenr FROM vbep UP TO 1 ROWS INTO TABLE lt_etenr
+      WHERE vbeln = iv_vbeln AND posnr = iv_posnr
       ORDER BY etenr
-      INTO TABLE @lt_etenr
-      UP TO 1 ROWS.
+      
+      .
     READ TABLE lt_etenr INTO lv_etenr INDEX 1.
     IF sy-subrc <> 0.
       lv_etenr = '0001'.

@@ -121,6 +121,7 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
 
     DATA ls_proposal TYPE bapihuhdrproposal.
     DATA ls_header   TYPE bapihuheader.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_exidv, ev_is_error, et_bapiret.
 
@@ -142,7 +143,8 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
             hukey          = ev_exidv
           TABLES
             return         = et_bapiret.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -161,11 +163,20 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
 
     DATA lt_number TYPE STANDARD TABLE OF bapihunumber WITH DEFAULT KEY.
     DATA lt_header TYPE ty_t_header.
+        DATA temp1 LIKE lt_number.
+        DATA temp2 LIKE LINE OF temp1.
+          DATA temp3 TYPE string.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: es_header, et_item, ev_is_error, et_bapiret.
 
     TRY.
-        lt_number = VALUE #( ( hu_exid = iv_exidv ) ).
+        
+        CLEAR temp1.
+        
+        temp2-hu_exid = iv_exidv.
+        INSERT temp2 INTO TABLE temp1.
+        lt_number = temp1.
         CALL FUNCTION 'BAPI_HU_GETLIST'
           EXPORTING
             notext    = abap_true
@@ -177,10 +188,17 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
             return    = et_bapiret.
         READ TABLE lt_header INTO es_header INDEX 1.
         IF sy-subrc <> 0 AND zabaputil_cl_bus_util_context=>bapi_check_is_error( et_bapiret ) = abap_false.
-          zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Handling unit { iv_exidv ALPHA = OUT } not found|
+          
+          CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
+            EXPORTING
+              input  = iv_exidv
+            IMPORTING
+              output = temp3.
+zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Handling unit { temp3 } not found|
                                                             CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -267,6 +285,7 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD delete.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -279,7 +298,8 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
             hukey  = iv_exidv
           TABLES
             return = et_bapiret.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -293,6 +313,7 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
   METHOD call_pack.
 
     DATA lt_return TYPE bapirettab.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -316,7 +337,8 @@ CLASS zabaputil_cl_bus_sd_hu IMPLEMENTATION.
               return       = lt_return.
         ENDIF.
         INSERT LINES OF lt_return INTO TABLE et_bapiret.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.

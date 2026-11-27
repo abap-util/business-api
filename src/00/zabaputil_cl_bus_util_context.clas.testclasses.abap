@@ -15,7 +15,7 @@ CLASS ltcl_bapi_ops DEFINITION FINAL
         message_v3 TYPE c LENGTH 50,
         message_v4 TYPE c LENGTH 50,
       END OF ty_s_ret,
-      ty_t_ret TYPE STANDARD TABLE OF ty_s_ret WITH EMPTY KEY.
+      ty_t_ret TYPE STANDARD TABLE OF ty_s_ret WITH DEFAULT KEY.
 
     METHODS check_is_error          FOR TESTING.
     METHODS check_is_error_msgty    FOR TESTING.
@@ -40,16 +40,47 @@ CLASS ltcl_bapi_ops IMPLEMENTATION.
 
     DATA lt_ret TYPE ty_t_ret.
 
-    lt_ret = VALUE #( ( type = `S` ) ( type = `W` ) ).
+    DATA temp1 TYPE ltcl_bapi_ops=>ty_t_ret.
+    DATA temp2 LIKE LINE OF temp1.
+    DATA temp3 TYPE ltcl_bapi_ops=>ty_t_ret.
+    DATA temp4 LIKE LINE OF temp3.
+    DATA temp5 TYPE ltcl_bapi_ops=>ty_t_ret.
+    DATA temp6 LIKE LINE OF temp5.
+    DATA temp7 TYPE ltcl_bapi_ops=>ty_t_ret.
+    DATA temp8 LIKE LINE OF temp7.
+    CLEAR temp1.
+    
+    temp2-type = `S`.
+    INSERT temp2 INTO TABLE temp1.
+    temp2-type = `W`.
+    INSERT temp2 INTO TABLE temp1.
+    lt_ret = temp1.
     cl_abap_unit_assert=>assert_false( zabaputil_cl_bus_util_context=>bapi_check_is_error( lt_ret ) ).
 
-    lt_ret = VALUE #( ( type = `S` ) ( type = `E` ) ).
+    
+    CLEAR temp3.
+    
+    temp4-type = `S`.
+    INSERT temp4 INTO TABLE temp3.
+    temp4-type = `E`.
+    INSERT temp4 INTO TABLE temp3.
+    lt_ret = temp3.
     cl_abap_unit_assert=>assert_true( zabaputil_cl_bus_util_context=>bapi_check_is_error( lt_ret ) ).
 
-    lt_ret = VALUE #( ( type = `A` ) ).
+    
+    CLEAR temp5.
+    
+    temp6-type = `A`.
+    INSERT temp6 INTO TABLE temp5.
+    lt_ret = temp5.
     cl_abap_unit_assert=>assert_true( zabaputil_cl_bus_util_context=>bapi_check_is_error( lt_ret ) ).
 
-    lt_ret = VALUE #( ( type = `X` ) ).
+    
+    CLEAR temp7.
+    
+    temp8-type = `X`.
+    INSERT temp8 INTO TABLE temp7.
+    lt_ret = temp7.
     cl_abap_unit_assert=>assert_true( zabaputil_cl_bus_util_context=>bapi_check_is_error( lt_ret ) ).
 
     CLEAR lt_ret.
@@ -63,9 +94,17 @@ CLASS ltcl_bapi_ops IMPLEMENTATION.
       BEGIN OF ty_s_prot,
         msgty TYPE c LENGTH 1,
       END OF ty_s_prot.
-    DATA lt_prot TYPE STANDARD TABLE OF ty_s_prot WITH EMPTY KEY.
+    DATA lt_prot TYPE STANDARD TABLE OF ty_s_prot WITH DEFAULT KEY.
 
-    lt_prot = VALUE #( ( msgty = `I` ) ( msgty = `E` ) ).
+    DATA temp9 LIKE lt_prot.
+    DATA temp10 LIKE LINE OF temp9.
+    CLEAR temp9.
+    
+    temp10-msgty = `I`.
+    INSERT temp10 INTO TABLE temp9.
+    temp10-msgty = `E`.
+    INSERT temp10 INTO TABLE temp9.
+    lt_prot = temp9.
     cl_abap_unit_assert=>assert_true( zabaputil_cl_bus_util_context=>bapi_check_is_error( lt_prot ) ).
 
   ENDMETHOD.
@@ -75,14 +114,29 @@ CLASS ltcl_bapi_ops IMPLEMENTATION.
     DATA lt_ret      TYPE ty_t_ret.
     DATA lv_is_error TYPE abap_bool.
 
-    lt_ret = VALUE #( ( type = `S` message = `ok` ) ).
+    DATA temp11 TYPE ltcl_bapi_ops=>ty_t_ret.
+    DATA temp12 LIKE LINE OF temp11.
+    DATA temp13 TYPE ltcl_bapi_ops=>ty_t_ret.
+    DATA temp14 LIKE LINE OF temp13.
+    CLEAR temp11.
+    
+    temp12-type = `S`.
+    temp12-message = `ok`.
+    INSERT temp12 INTO TABLE temp11.
+    lt_ret = temp11.
     zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = lt_ret
                                                      cv_is_error = lv_is_error ).
     cl_abap_unit_assert=>assert_false( lv_is_error ).
     cl_abap_unit_assert=>assert_equals( exp = 1
                                         act = lines( lt_ret ) ).
 
-    lt_ret = VALUE #( ( type = `E` message = `failed` ) ).
+    
+    CLEAR temp13.
+    
+    temp14-type = `E`.
+    temp14-message = `failed`.
+    INSERT temp14 INTO TABLE temp13.
+    lt_ret = temp13.
     zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = lt_ret
                                                      cv_is_error = lv_is_error ).
     cl_abap_unit_assert=>assert_true( lv_is_error ).
@@ -93,10 +147,17 @@ CLASS ltcl_bapi_ops IMPLEMENTATION.
 
     DATA lt_ret      TYPE ty_t_ret.
     DATA lv_is_error TYPE abap_bool.
+    DATA temp15 TYPE ltcl_bapi_ops=>ty_t_ret.
+    DATA temp16 LIKE LINE OF temp15.
 
     " an error flagged by the caller itself survives success messages
     lv_is_error = abap_true.
-    lt_ret = VALUE #( ( type = `S` ) ).
+    
+    CLEAR temp15.
+    
+    temp16-type = `S`.
+    INSERT temp16 INTO TABLE temp15.
+    lt_ret = temp15.
     zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = lt_ret
                                                      cv_is_error = lv_is_error ).
     cl_abap_unit_assert=>assert_true( lv_is_error ).
@@ -106,6 +167,12 @@ CLASS ltcl_bapi_ops IMPLEMENTATION.
   METHOD msg_add_text.
 
     DATA lt_ret TYPE ty_t_ret.
+    FIELD-SYMBOLS <temp17> LIKE LINE OF lt_ret.
+    DATA temp18 LIKE sy-tabix.
+    FIELD-SYMBOLS <temp19> LIKE LINE OF lt_ret.
+    DATA temp20 LIKE sy-tabix.
+    FIELD-SYMBOLS <temp21> LIKE LINE OF lt_ret.
+    DATA temp22 LIKE sy-tabix.
 
     zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = `not found`
                                                   CHANGING  ct_bapiret = lt_ret ).
@@ -115,34 +182,80 @@ CLASS ltcl_bapi_ops IMPLEMENTATION.
 
     cl_abap_unit_assert=>assert_equals( exp = 2
                                         act = lines( lt_ret ) ).
+    
+    
+    temp18 = sy-tabix.
+    READ TABLE lt_ret INDEX 1 ASSIGNING <temp17>.
+    sy-tabix = temp18.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
     cl_abap_unit_assert=>assert_equals( exp = `E`
-                                        act = lt_ret[ 1 ]-type ).
+                                        act = <temp17>-type ).
+    
+    
+    temp20 = sy-tabix.
+    READ TABLE lt_ret INDEX 1 ASSIGNING <temp19>.
+    sy-tabix = temp20.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
     cl_abap_unit_assert=>assert_equals( exp = `not found`
-                                        act = lt_ret[ 1 ]-message ).
+                                        act = <temp19>-message ).
+    
+    
+    temp22 = sy-tabix.
+    READ TABLE lt_ret INDEX 2 ASSIGNING <temp21>.
+    sy-tabix = temp22.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
     cl_abap_unit_assert=>assert_equals( exp = `I`
-                                        act = lt_ret[ 2 ]-type ).
+                                        act = <temp21>-type ).
 
   ENDMETHOD.
 
   METHOD msg_add_exception.
 
     DATA lt_ret TYPE ty_t_ret.
+        DATA lx_error TYPE REF TO cx_root.
+    FIELD-SYMBOLS <temp23> LIKE LINE OF lt_ret.
+    DATA temp24 LIKE sy-tabix.
+    FIELD-SYMBOLS <temp25> LIKE LINE OF lt_ret.
+    DATA temp26 LIKE sy-tabix.
 
     TRY.
         RAISE EXCEPTION TYPE zabaputil_cx_bus_util_error
           EXPORTING
             val = `the error text`.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                            CHANGING  ct_bapiret = lt_ret ).
     ENDTRY.
 
     cl_abap_unit_assert=>assert_equals( exp = 1
                                         act = lines( lt_ret ) ).
+    
+    
+    temp24 = sy-tabix.
+    READ TABLE lt_ret INDEX 1 ASSIGNING <temp23>.
+    sy-tabix = temp24.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
     cl_abap_unit_assert=>assert_equals( exp = `E`
-                                        act = lt_ret[ 1 ]-type ).
+                                        act = <temp23>-type ).
+    
+    
+    temp26 = sy-tabix.
+    READ TABLE lt_ret INDEX 1 ASSIGNING <temp25>.
+    sy-tabix = temp26.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
     cl_abap_unit_assert=>assert_equals( exp = `the error text`
-                                        act = lt_ret[ 1 ]-message ).
+                                        act = <temp25>-message ).
 
   ENDMETHOD.
 
@@ -150,16 +263,42 @@ CLASS ltcl_bapi_ops IMPLEMENTATION.
 
     DATA lt_ret TYPE ty_t_ret.
 
+    DATA temp27 TYPE ty_s_ret.
+    FIELD-SYMBOLS <temp28> LIKE LINE OF lt_ret.
+    DATA temp29 LIKE sy-tabix.
+    FIELD-SYMBOLS <temp30> LIKE LINE OF lt_ret.
+    DATA temp31 LIKE sy-tabix.
+    CLEAR temp27.
+    temp27-type = `W`.
+    temp27-id = `V1`.
+    temp27-number = `123`.
+    temp27-message = `careful`.
     zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2(
-      EXPORTING is_return  = VALUE ty_s_ret( type = `W` id = `V1` number = `123` message = `careful` )
+      EXPORTING is_return  = temp27
       CHANGING  ct_bapiret = lt_ret ).
 
     cl_abap_unit_assert=>assert_equals( exp = 1
                                         act = lines( lt_ret ) ).
+    
+    
+    temp29 = sy-tabix.
+    READ TABLE lt_ret INDEX 1 ASSIGNING <temp28>.
+    sy-tabix = temp29.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
     cl_abap_unit_assert=>assert_equals( exp = `V1`
-                                        act = lt_ret[ 1 ]-id ).
+                                        act = <temp28>-id ).
+    
+    
+    temp31 = sy-tabix.
+    READ TABLE lt_ret INDEX 1 ASSIGNING <temp30>.
+    sy-tabix = temp31.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
     cl_abap_unit_assert=>assert_equals( exp = `123`
-                                        act = lt_ret[ 1 ]-number ).
+                                        act = <temp30>-number ).
 
   ENDMETHOD.
 
@@ -167,7 +306,9 @@ CLASS ltcl_bapi_ops IMPLEMENTATION.
 
     DATA lt_ret TYPE ty_t_ret.
 
-    zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = VALUE ty_s_ret( )
+    DATA temp32 TYPE ty_s_ret.
+    CLEAR temp32.
+    zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = temp32
                                                       CHANGING  ct_bapiret = lt_ret ).
     cl_abap_unit_assert=>assert_initial( lt_ret ).
 
@@ -182,23 +323,72 @@ CLASS ltcl_bapi_ops IMPLEMENTATION.
         msgno TYPE n LENGTH 3,
         msgv1 TYPE c LENGTH 50,
       END OF ty_s_prot.
-    DATA lt_prot TYPE STANDARD TABLE OF ty_s_prot WITH EMPTY KEY.
+    DATA lt_prot TYPE STANDARD TABLE OF ty_s_prot WITH DEFAULT KEY.
     DATA lt_ret  TYPE ty_t_ret.
 
-    lt_prot = VALUE #( ( msgty = `E` msgid = `00` msgno = `001` msgv1 = `value` ) ).
+    DATA temp33 LIKE lt_prot.
+    DATA temp34 LIKE LINE OF temp33.
+    FIELD-SYMBOLS <temp35> LIKE LINE OF lt_ret.
+    DATA temp36 LIKE sy-tabix.
+    FIELD-SYMBOLS <temp37> LIKE LINE OF lt_ret.
+    DATA temp38 LIKE sy-tabix.
+    FIELD-SYMBOLS <temp39> LIKE LINE OF lt_ret.
+    DATA temp40 LIKE sy-tabix.
+    FIELD-SYMBOLS <temp41> LIKE LINE OF lt_ret.
+    DATA temp42 LIKE sy-tabix.
+    CLEAR temp33.
+    
+    temp34-msgty = `E`.
+    temp34-msgid = `00`.
+    temp34-msgno = `001`.
+    temp34-msgv1 = `value`.
+    INSERT temp34 INTO TABLE temp33.
+    lt_prot = temp33.
     zabaputil_cl_bus_util_context=>bapi_msg_add_table( EXPORTING it_table   = lt_prot
                                                    CHANGING  ct_bapiret = lt_ret ).
 
     cl_abap_unit_assert=>assert_equals( exp = 1
                                         act = lines( lt_ret ) ).
+    
+    
+    temp36 = sy-tabix.
+    READ TABLE lt_ret INDEX 1 ASSIGNING <temp35>.
+    sy-tabix = temp36.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
     cl_abap_unit_assert=>assert_equals( exp = `E`
-                                        act = lt_ret[ 1 ]-type ).
+                                        act = <temp35>-type ).
+    
+    
+    temp38 = sy-tabix.
+    READ TABLE lt_ret INDEX 1 ASSIGNING <temp37>.
+    sy-tabix = temp38.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
     cl_abap_unit_assert=>assert_equals( exp = `00`
-                                        act = lt_ret[ 1 ]-id ).
+                                        act = <temp37>-id ).
+    
+    
+    temp40 = sy-tabix.
+    READ TABLE lt_ret INDEX 1 ASSIGNING <temp39>.
+    sy-tabix = temp40.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
     cl_abap_unit_assert=>assert_equals( exp = `001`
-                                        act = lt_ret[ 1 ]-number ).
+                                        act = <temp39>-number ).
+    
+    
+    temp42 = sy-tabix.
+    READ TABLE lt_ret INDEX 1 ASSIGNING <temp41>.
+    sy-tabix = temp42.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
     cl_abap_unit_assert=>assert_equals( exp = `value`
-                                        act = lt_ret[ 1 ]-message_v1 ).
+                                        act = <temp41>-message_v1 ).
     cl_abap_unit_assert=>assert_true( zabaputil_cl_bus_util_context=>bapi_check_is_error( lt_ret ) ).
 
   ENDMETHOD.
@@ -213,23 +403,72 @@ CLASS ltcl_bapi_ops IMPLEMENTATION.
         txtnr TYPE c LENGTH 3,
         text  TYPE c LENGTH 73,
       END OF ty_s_mesg.
-    DATA lt_mesg TYPE STANDARD TABLE OF ty_s_mesg WITH EMPTY KEY.
+    DATA lt_mesg TYPE STANDARD TABLE OF ty_s_mesg WITH DEFAULT KEY.
     DATA lt_ret  TYPE ty_t_ret.
 
-    lt_mesg = VALUE #( ( msgty = `W` arbgb = `VL` txtnr = `042` text = `a warning` ) ).
+    DATA temp43 LIKE lt_mesg.
+    DATA temp44 LIKE LINE OF temp43.
+    FIELD-SYMBOLS <temp45> LIKE LINE OF lt_ret.
+    DATA temp46 LIKE sy-tabix.
+    FIELD-SYMBOLS <temp47> LIKE LINE OF lt_ret.
+    DATA temp48 LIKE sy-tabix.
+    FIELD-SYMBOLS <temp49> LIKE LINE OF lt_ret.
+    DATA temp50 LIKE sy-tabix.
+    FIELD-SYMBOLS <temp51> LIKE LINE OF lt_ret.
+    DATA temp52 LIKE sy-tabix.
+    CLEAR temp43.
+    
+    temp44-msgty = `W`.
+    temp44-arbgb = `VL`.
+    temp44-txtnr = `042`.
+    temp44-text = `a warning`.
+    INSERT temp44 INTO TABLE temp43.
+    lt_mesg = temp43.
     zabaputil_cl_bus_util_context=>bapi_msg_add_table( EXPORTING it_table   = lt_mesg
                                                    CHANGING  ct_bapiret = lt_ret ).
 
     cl_abap_unit_assert=>assert_equals( exp = 1
                                         act = lines( lt_ret ) ).
+    
+    
+    temp46 = sy-tabix.
+    READ TABLE lt_ret INDEX 1 ASSIGNING <temp45>.
+    sy-tabix = temp46.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
     cl_abap_unit_assert=>assert_equals( exp = `W`
-                                        act = lt_ret[ 1 ]-type ).
+                                        act = <temp45>-type ).
+    
+    
+    temp48 = sy-tabix.
+    READ TABLE lt_ret INDEX 1 ASSIGNING <temp47>.
+    sy-tabix = temp48.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
     cl_abap_unit_assert=>assert_equals( exp = `VL`
-                                        act = lt_ret[ 1 ]-id ).
+                                        act = <temp47>-id ).
+    
+    
+    temp50 = sy-tabix.
+    READ TABLE lt_ret INDEX 1 ASSIGNING <temp49>.
+    sy-tabix = temp50.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
     cl_abap_unit_assert=>assert_equals( exp = `042`
-                                        act = lt_ret[ 1 ]-number ).
+                                        act = <temp49>-number ).
+    
+    
+    temp52 = sy-tabix.
+    READ TABLE lt_ret INDEX 1 ASSIGNING <temp51>.
+    sy-tabix = temp52.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+    ENDIF.
     cl_abap_unit_assert=>assert_equals( exp = `a warning`
-                                        act = lt_ret[ 1 ]-message ).
+                                        act = <temp51>-message ).
 
   ENDMETHOD.
 

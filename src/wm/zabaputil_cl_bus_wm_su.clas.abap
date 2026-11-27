@@ -40,15 +40,22 @@ ENDCLASS.
 CLASS zabaputil_cl_bus_wm_su IMPLEMENTATION.
 
   METHOD read.
+      DATA temp1 TYPE string.
 
     CLEAR: es_lein, et_lqua, ev_is_error, et_bapiret.
 
-    SELECT SINGLE * FROM lein INTO @es_lein WHERE lenum = @iv_lenum.
+    SELECT SINGLE * FROM lein INTO es_lein WHERE lenum = iv_lenum.
     IF sy-subrc <> 0.
-      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Storage unit { iv_lenum ALPHA = OUT } not found|
+      
+      CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
+        EXPORTING
+          input  = iv_lenum
+        IMPORTING
+          output = temp1.
+zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Storage unit { temp1 } not found|
                                                         CHANGING  ct_bapiret = et_bapiret ).
     ELSE.
-      SELECT * FROM lqua INTO TABLE @et_lqua WHERE lgnum = @es_lein-lgnum AND lenum = @iv_lenum ORDER BY lqnum.
+      SELECT * FROM lqua INTO TABLE et_lqua WHERE lgnum = es_lein-lgnum AND lenum = iv_lenum ORDER BY lqnum.
     ENDIF.
 
     zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
@@ -57,6 +64,7 @@ CLASS zabaputil_cl_bus_wm_su IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD move.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_tanum, ev_is_error, et_bapiret.
 
@@ -80,7 +88,8 @@ CLASS zabaputil_cl_bus_wm_su IMPLEMENTATION.
           zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'L_TO_CREATE_MOVE_SU'
                                                           CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.

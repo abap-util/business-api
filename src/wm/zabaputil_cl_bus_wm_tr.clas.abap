@@ -61,6 +61,7 @@ CLASS zabaputil_cl_bus_wm_tr IMPLEMENTATION.
 
     DATA lv_anfme TYPE rl03t-anfme.
     DATA lv_altme TYPE rl03t-altme.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_tbnum, ev_is_error, et_bapiret.
 
@@ -91,7 +92,8 @@ CLASS zabaputil_cl_bus_wm_tr IMPLEMENTATION.
           zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'L_TR_CREATE'
                                                           CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -103,15 +105,22 @@ CLASS zabaputil_cl_bus_wm_tr IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD read.
+      DATA temp1 TYPE string.
 
     CLEAR: es_ltbk, et_ltbp, ev_is_error, et_bapiret.
 
-    SELECT SINGLE * FROM ltbk INTO @es_ltbk WHERE lgnum = @iv_lgnum AND tbnum = @iv_tbnum.
+    SELECT SINGLE * FROM ltbk INTO es_ltbk WHERE lgnum = iv_lgnum AND tbnum = iv_tbnum.
     IF sy-subrc <> 0.
-      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Transfer requirement { iv_lgnum }/{ iv_tbnum ALPHA = OUT } not found|
+      
+      CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
+        EXPORTING
+          input  = iv_tbnum
+        IMPORTING
+          output = temp1.
+zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Transfer requirement { iv_lgnum }/{ temp1 } not found|
                                                         CHANGING  ct_bapiret = et_bapiret ).
     ELSE.
-      SELECT * FROM ltbp INTO TABLE @et_ltbp WHERE lgnum = @iv_lgnum AND tbnum = @iv_tbnum ORDER BY tbpos.
+      SELECT * FROM ltbp INTO TABLE et_ltbp WHERE lgnum = iv_lgnum AND tbnum = iv_tbnum ORDER BY tbpos.
     ENDIF.
 
     zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
@@ -120,6 +129,7 @@ CLASS zabaputil_cl_bus_wm_tr IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD cancel.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -137,7 +147,8 @@ CLASS zabaputil_cl_bus_wm_tr IMPLEMENTATION.
           zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'L_TR_CANCEL'
                                                           CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.

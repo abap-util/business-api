@@ -118,6 +118,8 @@ CLASS zabaputil_cl_bus_sd_shipment IMPLEMENTATION.
     DATA ls_header TYPE bapishipmentheader.
     DATA lt_item   TYPE ty_t_item.
     DATA lv_vbeln  TYPE vbeln_vl.
+          DATA temp1 LIKE LINE OF lt_item.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_tknum, ev_is_error, et_bapiret.
 
@@ -125,7 +127,11 @@ CLASS zabaputil_cl_bus_sd_shipment IMPLEMENTATION.
         ls_header-shipment_type   = iv_shtyp.
         ls_header-trans_plan_pt   = iv_tplst.
         LOOP AT it_vbeln INTO lv_vbeln.
-          INSERT VALUE #( delivery = lv_vbeln itenerary = sy-tabix ) INTO TABLE lt_item.
+          
+          CLEAR temp1.
+          temp1-delivery = lv_vbeln.
+          temp1-itenerary = sy-tabix.
+          INSERT temp1 INTO TABLE lt_item.
         ENDLOOP.
         CALL FUNCTION 'BAPI_SHIPMENT_CREATE'
           EXPORTING
@@ -135,7 +141,8 @@ CLASS zabaputil_cl_bus_sd_shipment IMPLEMENTATION.
           TABLES
             itemdata   = lt_item
             return     = et_bapiret.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -151,15 +158,22 @@ CLASS zabaputil_cl_bus_sd_shipment IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD read.
+      DATA temp2 TYPE string.
 
     CLEAR: es_vttk, et_vttp, ev_is_error, et_bapiret.
 
-    SELECT SINGLE * FROM vttk INTO @es_vttk WHERE tknum = @iv_tknum.
+    SELECT SINGLE * FROM vttk INTO es_vttk WHERE tknum = iv_tknum.
     IF sy-subrc <> 0.
-      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Shipment { iv_tknum ALPHA = OUT } not found|
+      
+      CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
+        EXPORTING
+          input  = iv_tknum
+        IMPORTING
+          output = temp2.
+zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Shipment { temp2 } not found|
                                                         CHANGING  ct_bapiret = et_bapiret ).
     ELSE.
-      SELECT * FROM vttp INTO TABLE @et_vttp WHERE tknum = @iv_tknum ORDER BY tpnum.
+      SELECT * FROM vttp INTO TABLE et_vttp WHERE tknum = iv_tknum ORDER BY tpnum.
     ENDIF.
 
     zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
@@ -174,6 +188,7 @@ CLASS zabaputil_cl_bus_sd_shipment IMPLEMENTATION.
     DATA lv_field  TYPE string.
     FIELD-SYMBOLS <value>  TYPE any.
     FIELD-SYMBOLS <action> TYPE any.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -192,7 +207,8 @@ CLASS zabaputil_cl_bus_sd_shipment IMPLEMENTATION.
                                  is_header_action = ls_action
                        CHANGING  ct_bapiret       = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -229,6 +245,7 @@ CLASS zabaputil_cl_bus_sd_shipment IMPLEMENTATION.
 
     DATA ls_header TYPE bapishipmentheader.
     DATA ls_action TYPE bapishipmentheaderaction.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -239,7 +256,8 @@ CLASS zabaputil_cl_bus_sd_shipment IMPLEMENTATION.
         call_change( EXPORTING is_header        = ls_header
                                is_header_action = ls_action
                      CHANGING  ct_bapiret       = et_bapiret ).
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -257,21 +275,33 @@ CLASS zabaputil_cl_bus_sd_shipment IMPLEMENTATION.
     DATA lt_item        TYPE ty_t_item.
     DATA lt_item_action TYPE ty_t_item_action.
     DATA lv_vbeln       TYPE vbeln_vl.
+          DATA temp3 LIKE LINE OF lt_item.
+          DATA temp4 LIKE LINE OF lt_item_action.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
     TRY.
         ls_header-shipment_num = iv_tknum.
         LOOP AT it_vbeln INTO lv_vbeln.
-          INSERT VALUE #( delivery = lv_vbeln itenerary = sy-tabix ) INTO TABLE lt_item.
-          INSERT VALUE #( delivery = iv_action itenerary = iv_action ) INTO TABLE lt_item_action.
+          
+          CLEAR temp3.
+          temp3-delivery = lv_vbeln.
+          temp3-itenerary = sy-tabix.
+          INSERT temp3 INTO TABLE lt_item.
+          
+          CLEAR temp4.
+          temp4-delivery = iv_action.
+          temp4-itenerary = iv_action.
+          INSERT temp4 INTO TABLE lt_item_action.
         ENDLOOP.
         call_change( EXPORTING is_header        = ls_header
                                is_header_action = ls_action
                                it_item          = lt_item
                                it_item_action   = lt_item_action
                      CHANGING  ct_bapiret       = et_bapiret ).
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.

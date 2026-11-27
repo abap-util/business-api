@@ -57,6 +57,7 @@ CLASS zabaputil_cl_bus_ewm_stock IMPLEMENTATION.
     DATA lo_fields TYPE REF TO object.
     DATA lv_matnr  TYPE c LENGTH 40.
     DATA lv_padded TYPE c LENGTH 40.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_matid, ev_is_error, et_bapiret.
 
@@ -85,7 +86,8 @@ CLASS zabaputil_cl_bus_ewm_stock IMPLEMENTATION.
           zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Product { iv_matnr } not found|
                                                             CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         CLEAR ev_matid.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
@@ -102,6 +104,7 @@ CLASS zabaputil_cl_bus_ewm_stock IMPLEMENTATION.
     DATA lv_lgnum TYPE c LENGTH 4.
     DATA lv_lgpla TYPE c LENGTH 18.
     FIELD-SYMBOLS <bin> TYPE any.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: er_bin, ev_is_error, et_bapiret.
 
@@ -111,13 +114,14 @@ CLASS zabaputil_cl_bus_ewm_stock IMPLEMENTATION.
     TRY.
         CREATE DATA er_bin TYPE (lv_table).
         ASSIGN er_bin->* TO <bin>.
-        SELECT SINGLE * FROM (lv_table) INTO @<bin> WHERE lgnum = @lv_lgnum AND lgpla = @lv_lgpla.
+        SELECT SINGLE * FROM (lv_table) INTO <bin> WHERE lgnum = lv_lgnum AND lgpla = lv_lgpla.
         IF sy-subrc <> 0.
           CLEAR er_bin.
           zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Storage bin { iv_lgpla } not found in warehouse { iv_lgnum }|
                                                             CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         CLEAR er_bin.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
@@ -134,6 +138,7 @@ CLASS zabaputil_cl_bus_ewm_stock IMPLEMENTATION.
     DATA lv_lgnum TYPE c LENGTH 4.
     DATA lv_lgpla TYPE c LENGTH 18.
     FIELD-SYMBOLS <stock> TYPE STANDARD TABLE.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: er_stock, ev_is_error, et_bapiret.
 
@@ -143,8 +148,9 @@ CLASS zabaputil_cl_bus_ewm_stock IMPLEMENTATION.
     TRY.
         CREATE DATA er_stock TYPE STANDARD TABLE OF (lv_table).
         ASSIGN er_stock->* TO <stock>.
-        SELECT * FROM (lv_table) INTO TABLE @<stock> WHERE lgnum = @lv_lgnum AND lgpla = @lv_lgpla.
-      CATCH cx_root INTO DATA(lx_error).
+        SELECT * FROM (lv_table) INTO TABLE <stock> WHERE lgnum = lv_lgnum AND lgpla = lv_lgpla.
+        
+      CATCH cx_root INTO lx_error.
         CLEAR er_stock.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).

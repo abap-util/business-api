@@ -102,6 +102,7 @@ CLASS zabaputil_cl_bus_wm_to IMPLEMENTATION.
 
     DATA lv_anfme TYPE rl03t-anfme.
     DATA lv_altme TYPE rl03t-altme.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_tanum, ev_is_error, et_bapiret.
 
@@ -135,7 +136,8 @@ CLASS zabaputil_cl_bus_wm_to IMPLEMENTATION.
           zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'L_TO_CREATE_SINGLE'
                                                           CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -147,6 +149,7 @@ CLASS zabaputil_cl_bus_wm_to IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD create_from_delivery.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_tanum, ev_is_error, et_bapiret.
 
@@ -170,7 +173,8 @@ CLASS zabaputil_cl_bus_wm_to IMPLEMENTATION.
           zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'L_TO_CREATE_DN'
                                                           CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -182,6 +186,7 @@ CLASS zabaputil_cl_bus_wm_to IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD create_from_requirement.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_tanum, ev_is_error, et_bapiret.
 
@@ -202,7 +207,8 @@ CLASS zabaputil_cl_bus_wm_to IMPLEMENTATION.
           zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'L_TO_CREATE_TR'
                                                           CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -214,15 +220,22 @@ CLASS zabaputil_cl_bus_wm_to IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD read.
+      DATA temp1 TYPE string.
 
     CLEAR: es_ltak, et_ltap, ev_is_error, et_bapiret.
 
-    SELECT SINGLE * FROM ltak INTO @es_ltak WHERE lgnum = @iv_lgnum AND tanum = @iv_tanum.
+    SELECT SINGLE * FROM ltak INTO es_ltak WHERE lgnum = iv_lgnum AND tanum = iv_tanum.
     IF sy-subrc <> 0.
-      zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Transfer order { iv_lgnum }/{ iv_tanum ALPHA = OUT } not found|
+      
+      CALL FUNCTION 'CONVERSION_EXIT_ALPHA_OUTPUT'
+        EXPORTING
+          input  = iv_tanum
+        IMPORTING
+          output = temp1.
+zabaputil_cl_bus_util_context=>bapi_msg_add_text( EXPORTING iv_text    = |Transfer order { iv_lgnum }/{ temp1 } not found|
                                                         CHANGING  ct_bapiret = et_bapiret ).
     ELSE.
-      SELECT * FROM ltap INTO TABLE @et_ltap WHERE lgnum = @iv_lgnum AND tanum = @iv_tanum ORDER BY tapos.
+      SELECT * FROM ltap INTO TABLE et_ltap WHERE lgnum = iv_lgnum AND tanum = iv_tanum ORDER BY tapos.
     ENDIF.
 
     zabaputil_cl_bus_util_context=>bapi_finish( CHANGING ct_bapiret  = et_bapiret
@@ -231,6 +244,7 @@ CLASS zabaputil_cl_bus_wm_to IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD confirm.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -249,7 +263,8 @@ CLASS zabaputil_cl_bus_wm_to IMPLEMENTATION.
           zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'L_TO_CONFIRM'
                                                           CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -261,6 +276,7 @@ CLASS zabaputil_cl_bus_wm_to IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD cancel.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -278,7 +294,8 @@ CLASS zabaputil_cl_bus_wm_to IMPLEMENTATION.
           zabaputil_cl_bus_util_context=>bapi_msg_add_sy( EXPORTING iv_context = 'L_TO_CANCEL'
                                                           CHANGING  ct_bapiret = et_bapiret ).
         ENDIF.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.

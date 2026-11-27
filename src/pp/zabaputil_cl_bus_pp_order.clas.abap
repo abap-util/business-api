@@ -76,6 +76,7 @@ CLASS zabaputil_cl_bus_pp_order IMPLEMENTATION.
     DATA ls_objects TYPE bapi_pp_order_objects.
     DATA ls_return  TYPE bapiret2.
     DATA lt_header  TYPE ty_t_header.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: es_header, et_position, et_component, et_operation, ev_is_error, et_bapiret.
 
@@ -98,7 +99,8 @@ CLASS zabaputil_cl_bus_pp_order IMPLEMENTATION.
         zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = ls_return
                                                               CHANGING  ct_bapiret = et_bapiret ).
         READ TABLE lt_header INTO es_header INDEX 1.
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -125,6 +127,7 @@ CLASS zabaputil_cl_bus_pp_order IMPLEMENTATION.
   METHOD check_availability.
 
     DATA ls_return TYPE bapiret2.
+        DATA lx_error TYPE REF TO cx_root.
 
     CLEAR: ev_is_error, et_bapiret.
 
@@ -136,7 +139,8 @@ CLASS zabaputil_cl_bus_pp_order IMPLEMENTATION.
             return = ls_return.
         zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = ls_return
                                                               CHANGING  ct_bapiret = et_bapiret ).
-      CATCH cx_root INTO DATA(lx_error).
+        
+      CATCH cx_root INTO lx_error.
         zabaputil_cl_bus_util_context=>bapi_msg_add_exception( EXPORTING ix_error   = lx_error
                                                                CHANGING  ct_bapiret = et_bapiret ).
     ENDTRY.
@@ -167,12 +171,42 @@ CLASS zabaputil_cl_bus_pp_order IMPLEMENTATION.
     DATA lt_detail TYPE STANDARD TABLE OF bapi_order_return WITH DEFAULT KEY.
     DATA ls_return TYPE bapiret2.
 
-    lt_orders = VALUE #( ( order_number = iv_aufnr ) ).
-    zabaputil_cl_bus_util_context=>bapi_call_function(
+    DATA temp1 LIKE lt_orders.
+    DATA temp2 LIKE LINE OF temp1.
+    DATA temp3 LIKE REF TO lt_detail.
+DATA temp4 LIKE REF TO lt_orders.
+DATA temp5 LIKE REF TO ls_return.
+DATA temp6 TYPE abap_func_parmbind_tab.
+DATA temp7 LIKE LINE OF temp6.
+    CLEAR temp1.
+    
+    temp2-order_number = iv_aufnr.
+    INSERT temp2 INTO TABLE temp1.
+    lt_orders = temp1.
+    
+    GET REFERENCE OF lt_detail INTO temp3.
+
+GET REFERENCE OF lt_orders INTO temp4.
+
+GET REFERENCE OF ls_return INTO temp5.
+
+CLEAR temp6.
+
+temp7-name = 'RETURN'.
+temp7-kind = abap_func_importing.
+temp7-value = temp5.
+INSERT temp7 INTO TABLE temp6.
+temp7-name = 'ORDERS'.
+temp7-kind = abap_func_tables.
+temp7-value = temp4.
+INSERT temp7 INTO TABLE temp6.
+temp7-name = 'DETAIL_RETURN'.
+temp7-kind = abap_func_tables.
+temp7-value = temp3.
+INSERT temp7 INTO TABLE temp6.
+zabaputil_cl_bus_util_context=>bapi_call_function(
                         EXPORTING iv_name    = iv_function
-                                  it_param   = VALUE #( ( name = 'RETURN'        kind = abap_func_importing value = REF #( ls_return ) )
-                                                        ( name = 'ORDERS'        kind = abap_func_tables    value = REF #( lt_orders ) )
-                                                        ( name = 'DETAIL_RETURN' kind = abap_func_tables    value = REF #( lt_detail ) ) )
+                                  it_param   = temp6
                         CHANGING  ct_bapiret = ct_bapiret ).
     zabaputil_cl_bus_util_context=>bapi_msg_add_bapiret2( EXPORTING is_return  = ls_return
                                                           CHANGING  ct_bapiret = ct_bapiret ).
