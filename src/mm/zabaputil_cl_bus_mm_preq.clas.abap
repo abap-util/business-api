@@ -44,6 +44,8 @@ CLASS zabaputil_cl_bus_mm_preq IMPLEMENTATION.
     CLEAR: ev_rel_status_new, ev_is_error, et_bapiret.
 
     TRY.
+        " a plain RAISE in the module would leave an older message in sy-msg
+        CLEAR: sy-msgid, sy-msgno.
         CALL FUNCTION 'BAPI_REQUISITION_RELEASE'
           EXPORTING
             number                 = iv_banfn
@@ -77,6 +79,7 @@ CLASS zabaputil_cl_bus_mm_preq IMPLEMENTATION.
     CLEAR: ev_rel_status_new, ev_is_error, et_bapiret.
 
     TRY.
+        CLEAR: sy-msgid, sy-msgno.
         CALL FUNCTION 'BAPI_REQUISITION_RESET_RELEASE'
           EXPORTING
             number                   = iv_banfn

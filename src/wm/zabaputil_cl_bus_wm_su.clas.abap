@@ -61,6 +61,8 @@ CLASS zabaputil_cl_bus_wm_su IMPLEMENTATION.
     CLEAR: ev_tanum, ev_is_error, et_bapiret.
 
     TRY.
+        " a plain RAISE in the module would leave an older message in sy-msg
+        CLEAR: sy-msgid, sy-msgno.
         CALL FUNCTION 'L_TO_CREATE_MOVE_SU'
           EXPORTING
             i_lenum       = iv_lenum

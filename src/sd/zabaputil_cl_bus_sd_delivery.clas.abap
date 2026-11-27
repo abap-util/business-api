@@ -240,6 +240,8 @@ CLASS zabaputil_cl_bus_sd_delivery IMPLEMENTATION.
                                                             CHANGING  ct_bapiret = et_bapiret ).
         ELSE.
           zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'DELIVERY' ).
+          " a plain RAISE in the module would leave an older message in sy-msg
+          CLEAR: sy-msgid, sy-msgno.
           CALL FUNCTION 'WS_REVERSE_GOODS_ISSUE'
             EXPORTING
               i_vbeln                   = iv_vbeln

@@ -104,6 +104,8 @@ CLASS zabaputil_cl_bus_wm_to IMPLEMENTATION.
     TRY.
         lv_anfme = iv_anfme.
         lv_altme = iv_altme.
+        " a plain RAISE in the module would leave an older message in sy-msg
+        CLEAR: sy-msgid, sy-msgno.
         CALL FUNCTION 'L_TO_CREATE_SINGLE'
           EXPORTING
             i_lgnum       = iv_lgnum
@@ -146,6 +148,7 @@ CLASS zabaputil_cl_bus_wm_to IMPLEMENTATION.
 
     TRY.
         zabaputil_cl_bus_util_context=>bapi_refresh_buffers( 'DELIVERY' ).
+        CLEAR: sy-msgid, sy-msgno.
         CALL FUNCTION 'L_TO_CREATE_DN'
           EXPORTING
             i_lgnum       = iv_lgnum
@@ -177,6 +180,7 @@ CLASS zabaputil_cl_bus_wm_to IMPLEMENTATION.
     CLEAR: ev_tanum, ev_is_error, et_bapiret.
 
     TRY.
+        CLEAR: sy-msgid, sy-msgno.
         CALL FUNCTION 'L_TO_CREATE_TR'
           EXPORTING
             i_lgnum       = iv_lgnum
@@ -225,6 +229,7 @@ CLASS zabaputil_cl_bus_wm_to IMPLEMENTATION.
     CLEAR: ev_is_error, et_bapiret.
 
     TRY.
+        CLEAR: sy-msgid, sy-msgno.
         CALL FUNCTION 'L_TO_CONFIRM'
           EXPORTING
             i_lgnum       = iv_lgnum
@@ -254,6 +259,7 @@ CLASS zabaputil_cl_bus_wm_to IMPLEMENTATION.
     CLEAR: ev_is_error, et_bapiret.
 
     TRY.
+        CLEAR: sy-msgid, sy-msgno.
         CALL FUNCTION 'L_TO_CANCEL'
           EXPORTING
             i_lgnum       = iv_lgnum
